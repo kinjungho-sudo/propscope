@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+playwright
+pandas
+requests
+weasyprint
+jinja2
+pydantic

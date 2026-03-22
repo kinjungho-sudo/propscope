@@ -1,0 +1,17 @@
+from dataclasses import dataclass
+
+@dataclass
+class PropertyItem:
+    """매매 매물 — 보증금·월세 필드 없음"""
+    source:       str    # "naver" | "zigbang"
+    property_type:str    # "빌라" | "오피스텔"
+    name:         str    # 건물명
+    address:      str    # 주소
+    price:        str    # 매매가 (문자열, 예: "3억 2,000만원")
+    area:         str    # 전용면적 (㎡)
+    floor:        str    # 층수
+    build_year:   str    # 준공연도 (4자리)
+    description:  str = ""
+    url:          str = ""
+    lat:          float = 0.0
+    lng:          float = 0.0
