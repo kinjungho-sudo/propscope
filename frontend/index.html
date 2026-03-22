@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PropScope — 프리미엄 부동산 매매 시세 비교</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+    <!-- 🌐 Header -->
+    <header class="glass-header">
+        <div class="logo">PropScope <span style="font-size: 14px; font-weight: normal; color: #888; margin-left: 10px;">프리미엄 부동산 시세 분석</span></div>
+        
+        <div class="auth-group" style="margin-left: auto; display: flex; gap: 15px; align-items: center;">
+            <button id="btnLogin" class="btn-auth" style="background: white; color: #333; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> 구글로 시작하기
+            </button>
+            <button id="btnAdmin" class="btn-admin" style="background: rgba(255,255,255,0.05); color: #888; border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer;">관리자 전용</button>
+            <button id="btnDownloadPdf" class="btn-pdf">리포트 PDF 다운로드 📄</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 📍 Sidebar (Filter Panel) -->
+        <aside class="sidebar glass-panel">
+            <section class="search-box">
+                <label>📍 지역 검색</label>
+                <div class="input-group">
+                    <input type="text" id="inputRegion" placeholder="마포구 공덕동" value="마포구 공덕동">
+                    <button id="btnSearch" class="btn-primary">조회하기 🔍</button>
+                </div>
+            </section>
+
+            <section class="filter-group">
+                <label>🏠 매물 유형</label>
+                <div class="toggle-group">
+                    <button class="toggle active" data-type="빌라">빌라</button>
+                    <button class="toggle active" data-type="오피스텔">오피스텔</button>
+                </div>
+            </section>
+
+            <section class="filter-group">
+                <label>💰 매매가 (만원)</label>
+                <div class="range-inputs">
+                    <input type="number" id="priceMin" value="5000" step="1000">
+                    <span>~</span>
+                    <input type="number" id="priceMax" value="80000" step="1000">
+                </div>
+            </section>
+
+            <section class="filter-group">
+                <label>📐 전용면적 (㎡)</label>
+                <div class="range-inputs">
+                    <input type="number" id="areaMin" value="15">
+                    <span>~</span>
+                    <input type="number" id="areaMax" value="100">
+                </div>
+            </section>
+
+            <section class="filter-group">
+                <label>📅 준공연도 (이후)</label>
+                <input type="range" id="buildYear" min="1980" max="2024" value="2000" oninput="this.nextElementSibling.innerText = this.value + '년'">
+                <span class="range-val">2000년</span>
+            </section>
+
+            <div id="statsPanel" class="stats-card" style="display: none;">
+                <h4>📊 분석 통계</h4>
+                <div class="stat-item"><span class="label">평균 매매가</span> <span class="val" id="statAvgPrice">0</span></div>
+                <div class="stat-item"><span class="label">최저/최고가</span> <span class="val" id="statMinMax">0/0</span></div>
+                <div class="stat-item"><span class="label">시세 갭</span> <span class="val highlight" id="statGap">0</span></div>
+                <p id="statGapNote" class="gap-note">분석을 기다리고 있어요 🌈</p>
+            </div>
+        </aside>
+
+        <!-- 🗺️ Map Area -->
+        <div id="map" class="map-container"></div>
+    </main>
+
+    <!-- 📋 Slide-up List -->
+    <div id="listView" class="list-view glass-panel">
+        <div class="list-handle" id="listHandle">
+            <span></span>
+            <span id="itemCount">전체 매물 0건</span>
+        </div>
+        <div class="list-content">
+            <table id="propertyTable">
+                <thead>
+                    <tr>
+                        <th>출처</th>
+                        <th>유형</th>
+                        <th>건물명</th>
+                        <th>매매가</th>
+                        <th>면적</th>
+                        <th>층수</th>
+                        <th>준공</th>
+                    </tr>
+                </thead>
+                <tbody id="propertyList">
+                    <!-- 수집된 매물들이 여기에 쏙~! -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Kakao Map SDK -->
+    <!-- Representative 대표님, 여기에 발급받으신 카카오 API 키를 넣어주세요! -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0pfkUd8sbsr2UgLDCiCXg4U29DNC1AFBAAAAAQoNIJsAAAGdFbkypFR13198v8Zc&libraries=services,clusterer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/config.js"></script>
+    <script src="assets/supabase_auth.js"></script>
+    <script src="assets/app.js"></script>
+
+</body>
+</html>
