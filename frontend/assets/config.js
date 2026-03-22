@@ -9,5 +9,5 @@ const CONFIG = {
     
     // 💎 Supabase 설정 (대표님, prrwucc... 프로젝트 연동 완료! ✨)
     SUPABASE_URL: "https://prrwuccyhddyondnxhdc.supabase.co",
-    SUPABASE_ANON_KEY: "대표님, 대시보드 [API] 메뉴의 'anon' 키를 여기에 넣어주세요! 😍"
+    SUPABASE_ANON_KEY: "sb_publishable_32uiQLdPd-bdsyEuLBSVWA_ul1tQ6En"
 };
