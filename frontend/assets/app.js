@@ -5,7 +5,7 @@
 
 let map;
 let markers = [];
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = CONFIG.API_BASE;
 
 document.addEventListener("DOMContentLoaded", () => {
     initMap();
