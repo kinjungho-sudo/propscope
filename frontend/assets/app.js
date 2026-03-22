@@ -128,14 +128,19 @@ function updateUI(data) {
 
     data.items.forEach(item => {
         const row = document.createElement('tr');
+        const mapUrl = `https://map.kakao.com/link/search/${encodeURIComponent(item.name)}`;
         row.innerHTML = `
             <td><span class="badge ${item.source}">${item.source.toUpperCase()}</span></td>
             <td>${item.property_type}</td>
             <td><strong>${item.name}</strong></td>
-            <td style="color: #7C4DFF; font-weight:700;">${item.price}</td>
+            <td style="color: #2563EB; font-weight:700;">${item.price}</td>
             <td>${item.area}㎡</td>
             <td>${item.floor}</td>
-            <td>${item.build_year}</td>
+            <td>
+                <a href="${mapUrl}" target="_blank" style="text-decoration:none; color:var(--primary); font-size:12px; display:flex; align-items:center; gap:4px; font-weight:700;">
+                    <i class="fas fa-map-location-dot"></i> 열기
+                </a>
+            </td>
         `;
         listBody.appendChild(row);
     });
