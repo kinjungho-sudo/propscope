@@ -21,19 +21,24 @@ class ZigbangCrawler(BaseCrawler):
         for target_type in condition.property_types:
             service_type = "villa" if target_type == "빌라" else "officetel"
             
+            # 위도/경도가 없으면 기본값(공덕동) 사용
+            lat = condition.lat if condition.lat and condition.lat != 0 else 37.5443
+            lng = condition.lng if condition.lng and condition.lng != 0 else 126.9510
+            
             # Step 1: 위도/경도 기반 매물 ID 목록 수집
             url_list = f"{self.BASE_URL}/v2/items/geo-items"
             params = {
                 "serviceType": service_type,
                 "transactionType": "buy",
-                "lat": condition.lat,
-                "lng": condition.lng,
+                "lat": lat,
+                "lng": lng,
                 "radius": 1000,
                 "zoom": 15
             }
             
             try:
                 resp = requests.get(url_list, params=params, headers=self.HEADERS)
+                print(f"[ZigbangCrawler] Geo-items URL: {url_list} | Status: {resp.status_code}")
                 if resp.status_code != 200:
                     continue
                 

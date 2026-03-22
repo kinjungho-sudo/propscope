@@ -31,14 +31,20 @@ def get_region_code(region: str):
     mapping = {
         "공덕동": "1144010200",
         "서교동": "1144012000",
-        "아현동": "1144010100"
+        "아현동": "1144010100",
+        "논현동": "1168010800",
+        "역삼동": "1168010100",
+        "서초동": "1165010100",
+        "구로동": "1153010200"
     }
-    # 간단한 키값 매칭 (마포구 기준)
+    # 간단한 키값 매칭
     for key, value in mapping.items():
         if key in region:
             return {"region": region, "code": value}
             
-    return {"region": region, "code": "1144010200"} # 기본값: 공덕동
+    # 매칭되는 게 없으면 입력된 지역명을 그대로 쓰고 코드는 공덕동(기본)으로 반환하되 로그 남김
+    print(f"[Region Mapping] No match for '{region}'. Using default.")
+    return {"region": region, "code": "1144010200"}
 
 if __name__ == "__main__":
     import uvicorn

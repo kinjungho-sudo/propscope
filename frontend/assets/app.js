@@ -10,26 +10,26 @@ const API_BASE = CONFIG.API_BASE;
 document.addEventListener("DOMContentLoaded", () => {
     initMap();
     initEvents();
+    console.log("PropScope App Initialized 🚀");
 });
 
-// 🗺️ 카카오 맵 초기화
 function initMap() {
     try {
+        const container = document.getElementById('map');
         if (typeof kakao === 'undefined' || !kakao.maps) {
-            console.error("Kakao Maps SDK not loaded.");
-            const mapContainer = document.getElementById('map');
-            if (mapContainer) {
-                mapContainer.innerHTML = `
-                    <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f8fafc; color:#64748b; text-align:center; padding:20px;">
-                        <i class="fas fa-map-marked-alt" style="font-size:48px; margin-bottom:16px; color:#cbd5e1;"></i>
-                        <h3 style="margin-bottom:8px;">지도를 불러올 수 없습니다</h3>
-                        <p style="font-size:14px; line-height:1.6;">카카오 개발자 콘솔에서 도메인(propscope-52a.pages.dev)을<br>플랫폼에 등록하셨는지 확인해주세요! 😍</p>
+            console.warn("Kakao Maps SDK not loaded. Entering mock mode.");
+            if (container) {
+                container.innerHTML = `
+                    <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1e1e1e; color:#E0E0E0; text-align:center; padding:20px; border:1px solid #333;">
+                        <i class="fas fa-map-marked-alt" style="font-size:48px; margin-bottom:16px; color:var(--primary);"></i>
+                        <h3 style="margin-bottom:8px;">지도 프리뷰가 제한됨</h3>
+                        <p style="font-size:14px; line-height:1.6; opacity:0.8;">현재 로컬 환경에서 지도를 불러올 수 없지만,<br><b>검색 및 데이터 분석 기능은 정상 작동합니다!</b> 😍</p>
                     </div>
                 `;
             }
+            map = null;
             return;
         }
-        const container = document.getElementById('map');
         const options = {
             center: new kakao.maps.LatLng(37.5443, 126.9510), // 기본: 공덕동
             level: 5
@@ -37,6 +37,7 @@ function initMap() {
         map = new kakao.maps.Map(container, options);
     } catch (e) {
         console.error("Map Init Error:", e);
+        map = null;
     }
 }
 
@@ -80,17 +81,28 @@ async function performSearch() {
     
     const types = Array.from(document.querySelectorAll('.toggle.active')).map(b => b.dataset.type);
     
+    // 지도 중심 좌표 가져오기 (지도가 없으면 기본값 사용)
+    let lat = 37.5443;
+    let lng = 126.9510;
+    if (map) {
+        lat = map.getCenter().getLat();
+        lng = map.getCenter().getLng();
+    }
+    
     const payload = {
         region_name: regionData.region,
         region_code: regionData.code,
-        lat: map.getCenter().getLat(),
-        lng: map.getCenter().getLng(),
+        lat: lat,
+        lng: lng,
         property_types: types,
         price_min: parseInt(document.getElementById('priceMin').value),
         price_max: parseInt(document.getElementById('priceMax').value),
         area_min: parseFloat(document.getElementById('areaMin').value),
         area_max: parseFloat(document.getElementById('areaMax').value),
-        build_year_min: parseInt(document.getElementById('buildYear').value)
+        build_year_min: parseInt(document.getElementById('buildYear').value) || 2000,
+        floor_min: 0,
+        floor_max: 100,
+        TRADE_TYPE: "매매"
     };
 
     // 로딩 처리
@@ -145,11 +157,13 @@ function updateUI(data) {
         listBody.appendChild(row);
     });
 
-    // 3. 지도 마커 표시
-    clearMarkers();
-    data.items.forEach(item => {
-        addMarker(item);
-    });
+    // 3. 지도 마커 표시 (지도가 있을 때만)
+    if (map) {
+        clearMarkers();
+        data.items.forEach(item => {
+            addMarker(item);
+        });
+    }
     
     // 리스트 뷰 살짝 올리기
     document.getElementById('listView').classList.add('active');
@@ -194,17 +208,28 @@ async function downloadPdf() {
     
     const types = Array.from(document.querySelectorAll('.toggle.active')).map(b => b.dataset.type);
     
+    // 지도가 없으면 기본값 사용
+    let lat = 37.5443;
+    let lng = 126.9510;
+    if (map) {
+        lat = map.getCenter().getLat();
+        lng = map.getCenter().getLng();
+    }
+    
     const payload = {
         region_name: regionData.region,
         region_code: regionData.code,
-        lat: map.getCenter().getLat(),
-        lng: map.getCenter().getLng(),
+        lat: lat,
+        lng: lng,
         property_types: types,
         price_min: parseInt(document.getElementById('priceMin').value),
         price_max: parseInt(document.getElementById('priceMax').value),
         area_min: parseFloat(document.getElementById('areaMin').value),
         area_max: parseFloat(document.getElementById('areaMax').value),
-        build_year_min: parseInt(document.getElementById('buildYear').value)
+        build_year_min: parseInt(document.getElementById('buildYear').value) || 2000,
+        floor_min: 0,
+        floor_max: 100,
+        TRADE_TYPE: "매매"
     };
 
     try {

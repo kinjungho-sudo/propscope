@@ -32,6 +32,7 @@ class NaverCrawler(BaseCrawler):
                 
                 try:
                     resp = requests.get(url, headers=self.HEADERS, timeout=10)
+                    print(f"[NaverCrawler] Request URL: {url} | Status: {resp.status_code}")
                     if resp.status_code != 200:
                         break
                         
