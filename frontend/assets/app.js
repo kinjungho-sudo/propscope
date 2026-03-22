@@ -14,12 +14,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // 🗺️ 카카오 맵 초기화
 function initMap() {
-    const container = document.getElementById('map');
-    const options = {
-        center: new kakao.maps.LatLng(37.5443, 126.9510), // 기본: 공덕동
-        level: 5
-    };
-    map = new kakao.maps.Map(container, options);
+    try {
+        if (typeof kakao === 'undefined' || !kakao.maps) {
+            console.error("Kakao Maps SDK not loaded.");
+            const mapContainer = document.getElementById('map');
+            if (mapContainer) {
+                mapContainer.innerHTML = `
+                    <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f8fafc; color:#64748b; text-align:center; padding:20px;">
+                        <i class="fas fa-map-marked-alt" style="font-size:48px; margin-bottom:16px; color:#cbd5e1;"></i>
+                        <h3 style="margin-bottom:8px;">지도를 불러올 수 없습니다</h3>
+                        <p style="font-size:14px; line-height:1.6;">카카오 개발자 콘솔에서 도메인(propscope-52a.pages.dev)을<br>플랫폼에 등록하셨는지 확인해주세요! 😍</p>
+                    </div>
+                `;
+            }
+            return;
+        }
+        const container = document.getElementById('map');
+        const options = {
+            center: new kakao.maps.LatLng(37.5443, 126.9510), // 기본: 공덕동
+            level: 5
+        };
+        map = new kakao.maps.Map(container, options);
+    } catch (e) {
+        console.error("Map Init Error:", e);
+    }
 }
 
 // ⌨️ 이벤트 리스너 설정
