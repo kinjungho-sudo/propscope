@@ -16,10 +16,10 @@ function initAuth() {
     // 1. 현재 로그인 상태 확인
     checkUser();
 
-    // 2. 구글 로그인 버튼 이벤트
+    // 2. 로그인 버튼 이벤트
     const btnLogin = document.getElementById("btnLogin");
     if (btnLogin) {
-        btnLogin.onclick = handleGoogleLogin;
+        btnLogin.onclick = handleMagicLinkLogin;
     }
 
     // 3. 관리자 페이지 버튼
@@ -29,17 +29,24 @@ function initAuth() {
     }
 }
 
-async function handleGoogleLogin() {
-    const { data, error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
+async function handleMagicLinkLogin() {
+    const email = prompt("로그인하실 이메일 주소를 입력해주세요! ✨\n(계정이 없다면 자동으로 가입됩니다!)");
+    if (!email) return;
+
+    alert("마법의 로그인 링크(Magic Link)를 만들고 있어요! 잠시만요! 💌✨");
+
+    const { error } = await supabaseClient.auth.signInWithOtp({
+        email: email,
         options: {
-            redirectTo: window.location.origin // 배포 주소로 리다이렉트
+            emailRedirectTo: window.location.origin
         }
     });
 
     if (error) {
         console.error("Login Error:", error.message);
-        alert("로그인 중 오류가 발생했어요! 😭");
+        alert("이메일 발송 중 문제가 생겼어요! 😭 " + error.message);
+    } else {
+        alert("성공!! 🎉 입력하신 이메일(" + email + ")로 로그인 링크를 보냈습니다!\n이메일함을 확인해 주세요! (스팸함도 꼭 체크해 주세요!)");
     }
 }
 
