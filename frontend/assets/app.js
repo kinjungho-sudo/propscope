@@ -38,7 +38,12 @@ function initEvents() {
 
     // 리스트 핸들 클릭 (슬라이드업)
     document.getElementById('listHandle').addEventListener('click', () => {
-        document.getElementById('listView').classList.toggle('active');
+        document.getElementById('listView').classList.add('active');
+    });
+
+    // 닫기 버튼
+    document.getElementById('listClose').addEventListener('click', () => {
+        document.getElementById('listView').classList.remove('active');
     });
 
     // PDF 리포트 다운로드
