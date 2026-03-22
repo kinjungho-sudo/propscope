@@ -3,47 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PropScope — 프리미엄 부동산 매매 시세 비교</title>
+    <title>PropScope — 프리미엄 부동산 매매 시세</title>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="frontend/assets/style.css">
 </head>
 <body>
 
-    <!-- 🌐 Header -->
-    <header class="glass-header">
-        <div class="logo">PropScope <span style="font-size: 14px; font-weight: normal; color: #888; margin-left: 10px;">프리미엄 부동산 시세 분석</span></div>
+    <!-- Top Header -->
+    <header class="top-header">
+        <div class="header-left">
+            <h1 class="logo">PropScope</h1>
+            <div class="search-bar">
+                <input type="text" id="inputRegion" placeholder="지역, 단지 검색 (예: 마포구 공덕동)" value="마포구 공덕동">
+                <button id="btnSearch" class="btn-search">🔍</button>
+            </div>
+        </div>
         
-        <div class="auth-group" style="margin-left: auto; display: flex; gap: 15px; align-items: center;">
-            <button id="btnLogin" class="btn-auth" style="background: white; color: #333; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> 구글로 시작하기
+        <div class="header-right auth-group">
+            <button class="nav-link">지도</button>
+            <button class="nav-link">관심목록</button>
+            <button id="btnDownloadPdf" class="btn-outline">리포트 PDF 다운로드</button>
+            <button id="btnLogin" class="btn-login">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="16"> 구글 로그인
             </button>
-            <button id="btnAdmin" class="btn-admin" style="background: rgba(255,255,255,0.05); color: #888; border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer;">관리자 전용</button>
-            <button id="btnDownloadPdf" class="btn-pdf">리포트 PDF 다운로드 📄</button>
+            <button id="btnAdmin" class="btn-admin" style="display:none;">관리자</button>
         </div>
     </header>
 
-    <main class="container">
-        <!-- 📍 Sidebar (Filter Panel) -->
-        <aside class="sidebar glass-panel">
-            <section class="search-box">
-                <label>📍 지역 검색</label>
-                <div class="input-group">
-                    <input type="text" id="inputRegion" placeholder="마포구 공덕동" value="마포구 공덕동">
-                    <button id="btnSearch" class="btn-primary">조회하기 🔍</button>
-                </div>
-            </section>
+    <main class="app-container">
+        <!-- 📍 Sidebar (Filter & Stats Panel) -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>매물 탐색</h2>
+                <p>지금 가장 인기 있는 매물, 놓치지 마세요.</p>
+            </div>
 
-            <section class="filter-group">
-                <label>🏠 매물 유형</label>
+            <section class="filter-card">
+                <h3>🏠 매물 유형</h3>
                 <div class="toggle-group">
                     <button class="toggle active" data-type="빌라">빌라</button>
                     <button class="toggle active" data-type="오피스텔">오피스텔</button>
                 </div>
             </section>
 
-            <section class="filter-group">
-                <label>💰 매매가 (만원)</label>
+            <section class="filter-card">
+                <h3>💰 매매가 (만원)</h3>
                 <div class="range-inputs">
                     <input type="number" id="priceMin" value="5000" step="1000">
                     <span>~</span>
@@ -51,27 +56,43 @@
                 </div>
             </section>
 
-            <section class="filter-group">
-                <label>📐 전용면적 (㎡)</label>
-                <div class="range-inputs">
-                    <input type="number" id="areaMin" value="15">
-                    <span>~</span>
-                    <input type="number" id="areaMax" value="100">
+            <section class="filter-card half-card">
+                <div>
+                   <h3>📐 전용면적 (㎡)</h3>
+                   <div class="range-inputs">
+                       <input type="number" id="areaMin" value="15" style="width: 50px;">
+                       <span>~</span>
+                       <input type="number" id="areaMax" value="100" style="width: 50px;">
+                   </div>
+                </div>
+                <div>
+                   <h3>📅 준공연도</h3>
+                   <input type="range" id="buildYear" min="1980" max="2024" value="2000" oninput="this.nextElementSibling.innerText = this.value + '년 이후'">
+                   <div class="range-val">2000년 이후</div>
                 </div>
             </section>
 
-            <section class="filter-group">
-                <label>📅 준공연도 (이후)</label>
-                <input type="range" id="buildYear" min="1980" max="2024" value="2000" oninput="this.nextElementSibling.innerText = this.value + '년'">
-                <span class="range-val">2000년</span>
-            </section>
-
             <div id="statsPanel" class="stats-card" style="display: none;">
-                <h4>📊 분석 통계</h4>
-                <div class="stat-item"><span class="label">평균 매매가</span> <span class="val" id="statAvgPrice">0</span></div>
-                <div class="stat-item"><span class="label">최저/최고가</span> <span class="val" id="statMinMax">0/0</span></div>
-                <div class="stat-item"><span class="label">시세 갭</span> <span class="val highlight" id="statGap">0</span></div>
-                <p id="statGapNote" class="gap-note">분석을 기다리고 있어요 🌈</p>
+                <h3>📊 시세 분석 통계</h3>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <span class="label">평균 매매가</span>
+                        <span class="val" id="statAvgPrice">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">시세 갭</span>
+                        <span class="val highlight" id="statGap">0</span>
+                    </div>
+                </div>
+                <div class="stat-details">
+                    <div class="stat-item"><span class="label">최저/최고가</span> <span class="val" id="statMinMax">0/0</span></div>
+                    <p id="statGapNote" class="gap-note">데이터가 충분합니다.</p>
+                </div>
+            </div>
+            
+            <div class="list-summary" id="listHandle">
+                <span id="itemCount">전체 매물 0건</span>
+                <span class="icon" style="font-size: 12px;">리스트 보기 🔼</span>
             </div>
         </aside>
 
@@ -80,10 +101,10 @@
     </main>
 
     <!-- 📋 Slide-up List -->
-    <div id="listView" class="list-view glass-panel">
-        <div class="list-handle" id="listHandle">
-            <span></span>
-            <span id="itemCount">전체 매물 0건</span>
+    <div id="listView" class="list-view">
+        <div class="list-header" id="listClose">
+            <h3>상세 매물 리스트</h3>
+            <span style="font-size:12px;cursor:pointer;">▼ 닫기</span>
         </div>
         <div class="list-content">
             <table id="propertyTable">
@@ -106,12 +127,16 @@
     </div>
 
     <!-- Kakao Map SDK -->
-    <!-- Representative 대표님, 여기에 발급받으신 카카오 API 키를 넣어주세요! -->
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0pfkUd8sbsr2UgLDCiCXg4U29DNC1AFBAAAAAQoNIJsAAAGdFbkypFR13198v8Zc&libraries=services,clusterer"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="frontend/assets/config.js"></script>
     <script src="frontend/assets/supabase_auth.js"></script>
     <script src="frontend/assets/app.js"></script>
-
+    <script>
+        // 리스트 닫기 버튼 추가 이벤트
+        document.getElementById('listClose').addEventListener('click', () => {
+            document.getElementById('listView').classList.remove('active');
+        });
+    </script>
 </body>
 </html>
