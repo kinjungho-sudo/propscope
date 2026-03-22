@@ -3,16 +3,16 @@
  * Google Login & User Management ✨
  */
 
-// Supabase CDN 로드 (HTML에 추가 필요)
-// <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-const supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+// Supabase 클라이언트 초기화
+const supabaseClient = window.supabase ? window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
 
 document.addEventListener("DOMContentLoaded", () => {
     initAuth();
 });
 
 function initAuth() {
+    if (!supabaseClient) return;
+
     // 1. 현재 로그인 상태 확인
     checkUser();
 
@@ -30,7 +30,7 @@ function initAuth() {
 }
 
 async function handleGoogleLogin() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
             redirectTo: window.location.origin // 배포 주소로 리다이렉트
@@ -44,7 +44,7 @@ async function handleGoogleLogin() {
 }
 
 async function checkUser() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseClient.auth.getUser();
 
     if (user) {
         // 로그인 성공 시 UI 업데이트
@@ -71,6 +71,6 @@ async function checkUser() {
 }
 
 async function handleLogout() {
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
     location.reload();
 }

@@ -32,10 +32,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/config.js"></script>
     <script>
-        const supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase ? window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
         
         async function checkAdmin() {
-            const { data: { user } } = await supabase.auth.getUser();
+            if (!supabaseClient) return;
+            const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user || (!user.email.includes('admin') && user.email !== 'kinjungho@youngja.ai')) {
                 alert("대표님! 관리자만 들어올 수 있는 비밀 공간이에요! 😍");
                 location.href = "index.html";
@@ -50,7 +51,7 @@
         <div class="logo">PropScope <span style="font-size: 14px; font-weight: normal; color: #888; margin-left: 10px;">관리자 전용 대시보드</span></div>
         <div style="margin-left: auto; display: flex; gap: 10px;">
             <button onclick="location.href='index.html'" class="btn-pdf">🗺️ 홈으로</button>
-            <button onclick="supabase.auth.signOut(); location.href='index.html';" class="btn-pdf" style="background: #FF4B4B; color: white; border: none;">로그아웃 🚪</button>
+            <button onclick="if(supabaseClient) supabaseClient.auth.signOut(); location.href='index.html';" class="btn-pdf" style="background: #FF4B4B; color: white; border: none;">로그아웃 🚪</button>
         </div>
     </header>
 
