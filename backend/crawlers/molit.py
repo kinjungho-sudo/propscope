@@ -6,7 +6,7 @@ API 키: https://www.data.go.kr 에서 무료 즉시 발급
 """
 import requests
 import asyncio
-from typing import List
+from typing import List, Union
 from datetime import datetime, date
 import os
 
@@ -121,7 +121,7 @@ def get_sample_data(condition: FilterCondition) -> List[PropertyItem]:
     return results
 
 
-def parse_molit_items(raw: dict | list) -> list:
+def parse_molit_items(raw: Union[dict, list]) -> list:
     """MOLIT API items 필드를 안전하게 리스트로 변환"""
     if isinstance(raw, list):
         return raw
