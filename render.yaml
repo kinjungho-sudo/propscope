@@ -1,0 +1,22 @@
+services:
+  # ── 백엔드 API 서버 ──────────────────────────────────
+  - type: web
+    name: propscope-api
+    runtime: python
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+
+  # ── 프론트엔드 정적 사이트 ───────────────────────────
+  - type: web
+    name: propscope
+    runtime: static
+    rootDir: frontend
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache

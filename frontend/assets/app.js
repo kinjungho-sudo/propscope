@@ -4,6 +4,9 @@
 
 let map;
 let markers = [];
+let allItems = [];         // 전체 매물 캐시 (정렬용)
+let sortKey   = null;     // 현재 정렬 컬럼
+let sortAsc   = true;     // 오름차순 여부
 const API_BASE = CONFIG.API_BASE;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -191,42 +194,12 @@ function updateUI(data) {
         newSection.style.display = 'none';
     }
 
-    // ── 매물 목록 ──
-    const listBody = document.getElementById('propertyList');
-    listBody.innerHTML = '';
-
-    if (!data.items || data.items.length === 0) {
-        listBody.innerHTML = `
-            <tr><td colspan="9" style="text-align:center;padding:48px;color:#8b949e;">
-                <i class="fas fa-search" style="font-size:32px;margin-bottom:12px;display:block;opacity:0.3;"></i>
-                수집된 매물이 없습니다.<br>
-                <small>지역명 확인 또는 필터 조건을 완화해 보세요.</small>
-            </td></tr>`;
-    } else {
-        data.items.forEach(item => {
-            const isNew = item.is_new;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><span class="badge ${item.source}">${item.source === 'naver' ? '네이버' : '직방'}</span></td>
-                <td>${item.property_type}</td>
-                <td>
-                    ${isNew ? '<span class="badge-new">신축</span> ' : ''}
-                    <strong>${item.name}</strong>
-                    <br><small style="color:#8b949e;">${item.address}</small>
-                </td>
-                <td style="color:#7C4DFF;font-weight:700;">${item.price}</td>
-                <td style="color:#FFD700;font-weight:600;">${item.price_per_pyung || '-'}</td>
-                <td>${parseFloat(item.area || 0).toFixed(1)}㎡</td>
-                <td>${item.floor || '-'}</td>
-                <td>${item.build_year || '-'}</td>
-                <td>
-                    <a href="${item.url || '#'}" target="_blank" class="btn-item-link">
-                        <i class="fas fa-external-link-alt"></i>
-                    </a>
-                </td>`;
-            listBody.appendChild(row);
-        });
-    }
+    // ── 매물 목록 (정렬 지원) ──
+    allItems = data.items || [];  // 캐시 저장
+    sortKey = null;               // 정렬 초기화
+    sortAsc = true;
+    renderTable(allItems);
+    updateSortHeaders();
 
     // ── 지도 마커 ──
     if (map) {
@@ -237,6 +210,110 @@ function updateUI(data) {
     if (total > 0) {
         document.getElementById('listView').classList.add('active');
     }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📋 테이블 렌더 (정렬 지원)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderTable(items) {
+    const listBody = document.getElementById('propertyList');
+    listBody.innerHTML = '';
+
+    if (!items || items.length === 0) {
+        listBody.innerHTML = `
+            <tr><td colspan="9" style="text-align:center;padding:48px;color:#8b949e;">
+                <i class="fas fa-search" style="font-size:32px;margin-bottom:12px;display:block;opacity:0.3;"></i>
+                수집된 매물이 없습니다.<br>
+                <small>지역명 확인 또는 필터 조건을 완화해 보세요.</small>
+            </td></tr>`;
+        return;
+    }
+
+    items.forEach(item => {
+        const isNew   = item.is_new;
+        const areaM2  = parseFloat(item.area || 0);
+        const areaPy  = areaM2 > 0 ? (areaM2 / 3.3058).toFixed(1) : '-';
+        const areaStr = areaM2 > 0 ? `${areaM2.toFixed(1)}㎡<br><small style="color:#8b949e;">(${areaPy}평)</small>` : '-';
+        const yearNum = parseInt(item.build_year) || 0;
+        const age     = yearNum > 0 ? `${item.build_year}<br><small style="color:#8b949e;">築${new Date().getFullYear()-yearNum}년</small>` : (item.build_year || '-');
+
+        const row = document.createElement('tr');
+        if (isNew) row.classList.add('row-new');
+        row.innerHTML = `
+            <td><span class="badge ${item.source}">${item.source === 'naver' ? '네이버' : '직방'}</span></td>
+            <td>${item.property_type}</td>
+            <td>
+                ${isNew ? '<span class="badge-new">🏗️ 신축</span> ' : ''}
+                <strong>${item.name}</strong>
+                <br><small style="color:#8b949e;">${item.address}</small>
+            </td>
+            <td style="color:#7C4DFF;font-weight:700;">${item.price}</td>
+            <td style="color:#FFD700;font-weight:600;">${item.price_per_pyung || '-'}</td>
+            <td>${areaStr}</td>
+            <td>${item.floor || '-'}</td>
+            <td>${age}</td>
+            <td>
+                <a href="${item.url || '#'}" target="_blank" class="btn-item-link">
+                    <i class="fas fa-external-link-alt"></i>
+                </a>
+            </td>`;
+        listBody.appendChild(row);
+    });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🔃 테이블 정렬
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function sortTable(key) {
+    if (sortKey === key) {
+        sortAsc = !sortAsc;
+    } else {
+        sortKey = key;
+        sortAsc = true;
+    }
+
+    const sorted = [...allItems].sort((a, b) => {
+        let va, vb;
+        if (key === 'price') {
+            va = a.price_man || 0;
+            vb = b.price_man || 0;
+        } else if (key === 'pyung') {
+            va = parseInt((a.price_per_pyung || '0').replace(/[^0-9]/g, '')) || 0;
+            vb = parseInt((b.price_per_pyung || '0').replace(/[^0-9]/g, '')) || 0;
+        } else if (key === 'area') {
+            va = parseFloat(a.area || 0);
+            vb = parseFloat(b.area || 0);
+        } else if (key === 'year') {
+            va = parseInt(a.build_year) || 0;
+            vb = parseInt(b.build_year) || 0;
+        } else {
+            return 0;
+        }
+        return sortAsc ? va - vb : vb - va;
+    });
+
+    renderTable(sorted);
+    updateSortHeaders();
+}
+
+function updateSortHeaders() {
+    const cols = [
+        { id: 'thPrice', key: 'price' },
+        { id: 'thPyung', key: 'pyung' },
+        { id: 'thArea',  key: 'area'  },
+        { id: 'thYear',  key: 'year'  }
+    ];
+    cols.forEach(({ id, key }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const base = el.dataset.label || el.innerText.replace(/ [▲▼↕]/g,'').trim();
+        el.dataset.label = base;
+        if (sortKey === key) {
+            el.innerText = base + (sortAsc ? ' ▲' : ' ▼');
+        } else {
+            el.innerText = base + ' ↕';
+        }
+    });
 }
 
 // ── 헬퍼 ──

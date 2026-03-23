@@ -43,16 +43,19 @@ class ZigbangCrawler(BaseCrawler):
         lat = condition.lat if condition.lat and condition.lat != 0 else 37.5443
         lng = condition.lng if condition.lng and condition.lng != 0 else 126.9510
 
-        # precision=5 → 약 4.9km²; 결과 없으면 4(약 39km²)로 확장
-        for precision in [5, 4]:
+        # precision 5 → 4 → 3 순으로 확장 시도
+        for precision in [5, 4, 3]:
             ghash = encode_geohash(lat, lng, precision=precision)
+            collected = 0
 
             for target_type in condition.property_types:
                 service_path = "villas" if target_type == "빌라" else "officetels"
                 list_url = f"{self.BASE_URL}/house/property/v1/items/{service_path}"
                 params = {
                     "geohash": ghash,
-                    "salesPriceMin": 0,
+                    "salesType": "매매",      # ← 매매 필터 명시
+                    "salesPriceMin": condition.price_min or 0,
+                    "salesPriceMax": condition.price_max or 0,
                     "depositMin": 0,
                     "rentMin": 0
                 }
@@ -62,16 +65,18 @@ class ZigbangCrawler(BaseCrawler):
                         list_url, params=params,
                         headers=self.HEADERS, cookies=self.COOKIES, timeout=10
                     )
-                    print(f"[ZigbangCrawler] {target_type} | geohash={ghash} | status={resp.status_code}")
+                    print(f"[ZigbangCrawler] {target_type} | precision={precision} geohash={ghash} | status={resp.status_code}")
 
                     if resp.status_code != 200:
                         continue
 
                     item_ids = resp.json().get("item_ids", [])
-                    print(f"[ZigbangCrawler] Found {len(item_ids)} IDs")
+                    print(f"[ZigbangCrawler] IDs found: {len(item_ids)}")
 
                     if not item_ids:
                         continue
+
+                    collected += len(item_ids)
 
                     # 상세 조회 (50개 배치)
                     detail_url = f"{self.BASE_URL}/house/property/v1/items/list"

@@ -383,3 +383,20 @@ body {
 /* premium-table 전체 너비 */
 .premium-table { width: 100%; border-collapse: collapse; }
 
+/* 신축 행 강조 */
+.premium-table tr.row-new td {
+    background: rgba(255, 215, 0, 0.04);
+    border-left: 3px solid #FFD700;
+}
+.premium-table tr.row-new:hover td {
+    background: rgba(255, 215, 0, 0.08) !important;
+}
+
+/* 정렬 가능 헤더 */
+.premium-table th[onclick] {
+    user-select: none;
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+.premium-table th[onclick]:hover { color: var(--primary); }
+
