@@ -18,63 +18,7 @@ from ..utils.price_parser import format_price
 CURRENT_YEAR = datetime.now().year
 NEW_BUILD_THRESHOLD = 5
 
-# 구 단위 법정동코드 (5자리)
-GU_CODE_MAP = {
-    "종로구": "11110", "중구": "11140", "용산구": "11230", "성동구": "11215",
-    "광진구": "11215", "동대문구": "11210", "중랑구": "11260", "성북구": "11290",
-    "강북구": "11305", "도봉구": "11320", "노원구": "11350", "은평구": "11380",
-    "서대문구": "11140", "마포구": "11440", "양천구": "11470", "강서구": "11500",
-    "구로구": "11530", "금천구": "11545", "영등포구": "11560", "동작구": "11590",
-    "관악구": "11620", "서초구": "11650", "강남구": "11680", "송파구": "11710",
-    "강동구": "11740",
-}
-
-# 동 → 구 매핑
-DONG_TO_GU = {
-    "공덕동": "마포구", "서교동": "마포구", "합정동": "마포구", "망원동": "마포구",
-    "연남동": "마포구", "성산동": "마포구", "상암동": "마포구", "아현동": "마포구",
-    "동교동": "마포구", "대흥동": "마포구", "염리동": "마포구", "도화동": "마포구",
-    "용강동": "마포구", "마포동": "마포구", "신수동": "마포구", "창전동": "마포구",
-    "역삼동": "강남구", "삼성동": "강남구", "논현동": "강남구", "청담동": "강남구",
-    "대치동": "강남구", "압구정동": "강남구", "개포동": "강남구", "도곡동": "강남구",
-    "서초동": "서초구", "방배동": "서초구", "잠원동": "서초구", "반포동": "서초구",
-    "양재동": "서초구",
-    "잠실동": "송파구", "가락동": "송파구", "문정동": "송파구", "방이동": "송파구",
-    "풍납동": "송파구", "거여동": "송파구",
-    "이태원동": "용산구", "한남동": "용산구", "후암동": "용산구", "청파동": "용산구",
-    "보광동": "용산구", "남영동": "용산구",
-    "성수동": "성동구", "왕십리동": "성동구", "금호동": "성동구", "옥수동": "성동구",
-    "행당동": "성동구",
-    "흑석동": "동작구", "상도동": "동작구", "노량진동": "동작구", "대방동": "동작구",
-    "신림동": "관악구", "봉천동": "관악구",
-    "여의도동": "영등포구", "당산동": "영등포구", "문래동": "영등포구",
-    "화곡동": "강서구", "마곡동": "강서구", "발산동": "강서구",
-    "신촌동": "서대문구", "홍제동": "서대문구", "홍은동": "서대문구",
-    "연희동": "서대문구", "남가좌동": "서대문구", "북가좌동": "서대문구",
-    "상계동": "노원구", "중계동": "노원구", "하계동": "노원구", "공릉동": "노원구",
-    "창동": "도봉구", "도봉동": "도봉구", "방학동": "도봉구",
-    "수유동": "강북구", "미아동": "강북구", "번동": "강북구",
-    "구로동": "구로구", "신도림동": "구로구", "개봉동": "구로구",
-    "독산동": "금천구", "가산동": "금천구", "시흥동": "금천구",
-    "목동": "양천구", "신정동": "양천구",
-    "면목동": "중랑구", "상봉동": "중랑구",
-    "전농동": "동대문구", "답십리동": "동대문구", "장안동": "동대문구",
-    "신당동": "중구", "황학동": "중구",
-    "성수동1가": "성동구", "성수동2가": "성동구",
-}
-
-
-def get_gu_code(region_name: str) -> str:
-    """지역명에서 구 코드(5자리) 추출"""
-    # 구 직접 매핑
-    for gu, code in GU_CODE_MAP.items():
-        if gu in region_name:
-            return code
-    # 동 → 구 → 코드
-    for dong, gu in DONG_TO_GU.items():
-        if dong in region_name:
-            return GU_CODE_MAP.get(gu, "11440")
-    return "11440"  # 기본값: 마포구
+# ── 기존 정적 매핑 제거 (법정동코드 직접 활용) ──
 
 
 def calc_pyung_price(price_man: int, area_m2: float) -> str:
@@ -85,38 +29,37 @@ def calc_pyung_price(price_man: int, area_m2: float) -> str:
 
 
 def get_sample_data(condition: FilterCondition) -> List[PropertyItem]:
-    """API 미활성화 시 샘플 데이터 반환 (UI 확인용)"""
+    """API 미활성화 시 현재 검색 지역에 맞는 샘플 데이터 생성"""
+    region = condition.region_name
     samples = [
-        {"name": "공덕 한신휴플러스", "dong": "공덕동", "price_man": 45000, "area_m2": 59.9, "floor": "4", "build_year": "2008", "is_new": False},
-        {"name": "공덕 래미안", "dong": "공덕동", "price_man": 52000, "area_m2": 84.2, "floor": "7", "build_year": "2012", "is_new": False},
-        {"name": "마포 신축빌라", "dong": "아현동", "price_man": 38000, "area_m2": 49.5, "floor": "2", "build_year": "2021", "is_new": True},
-        {"name": "공덕 신영지웰", "dong": "공덕동", "price_man": 61000, "area_m2": 101.2, "floor": "9", "build_year": "2015", "is_new": False},
-        {"name": "마포 아현역 1단지", "dong": "아현동", "price_man": 41500, "area_m2": 55.6, "floor": "3", "build_year": "2004", "is_new": False},
-        {"name": "공덕 현대오피스텔", "dong": "공덕동", "price_man": 28000, "area_m2": 33.0, "floor": "6", "build_year": "2019", "is_new": True},
-        {"name": "마포 성산시영", "dong": "성산동", "price_man": 55000, "area_m2": 76.8, "floor": "5", "build_year": "1993", "is_new": False},
-        {"name": "공덕 신축다세대", "dong": "공덕동", "price_man": 33000, "area_m2": 42.1, "floor": "2", "build_year": "2022", "is_new": True},
+        {"name": f"{region} 래미안", "price_man": 125000, "area_m2": 84.9, "floor": "12", "build_year": "2015"},
+        {"name": f"{region} 자이", "price_man": 138000, "area_m2": 84.8, "floor": "8", "build_year": "2018"},
+        {"name": f"{region} 힐스테이트", "price_man": 112000, "area_m2": 59.9, "floor": "5", "build_year": "2012"},
+        {"name": f"{region} 푸르지오", "price_man": 98000, "area_m2": 59.7, "floor": "15", "build_year": "2010"},
+        {"name": f"{region} 신축빌라", "price_man": 45000, "area_m2": 42.5, "floor": "3", "build_year": "2023"},
+        {"name": f"{region} 오피스텔", "price_man": 28000, "area_m2": 33.2, "floor": "10", "build_year": "2021"},
     ]
     results = []
-    for s in samples:
+    import random
+    for i, s in enumerate(samples):
         price_man = s["price_man"]
         area_m2 = s["area_m2"]
-        build_year = int(s["build_year"])
         results.append(PropertyItem(
             source="molit",
-            property_type="빌라",
+            property_type="빌라" if "빌라" in s["name"] else "오피스텔" if "오피스텔" in s["name"] else "빌라",
             name=s["name"],
-            address=f"서울 마포구 {s['dong']}",
+            address=f"서울 {region} {i+1}번지",
             price=format_price(price_man),
             price_man=price_man,
             price_per_pyung=calc_pyung_price(price_man, area_m2),
             area=str(area_m2),
             floor=s["floor"],
             build_year=s["build_year"],
-            is_new=s["is_new"],
-            description="[샘플] 실거래가 API 키 활성화 대기 중",
+            is_new=int(s["build_year"]) >= (CURRENT_YEAR - NEW_BUILD_THRESHOLD),
+            description="[샘플 데이터] 실제 데이터 수집 중 문제가 발생하여 표시되는 데이터입니다.",
             url="https://rt.molit.go.kr",
-            lat=37.5443 + (hash(s["name"]) % 100) * 0.0005,
-            lng=126.9510 + (hash(s["dong"]) % 100) * 0.0005
+            lat=condition.lat + (random.random() - 0.5) * 0.01,
+            lng=condition.lng + (random.random() - 0.5) * 0.01
         ))
     return results
 
@@ -165,15 +108,15 @@ class MolitCrawler(BaseCrawler):
             return get_sample_data(condition)
 
         results = []
-        gu_code = get_gu_code(condition.region_name)
-        dong_filter = condition.region_name  # 동 이름 필터링용
-
-        # 최근 12개월 데이터 (실거래 데이터는 매물보다 양이 적으므로 범위를 넓힙니다)
+        # 시군구 코드 (10자리 법정동코드의 앞 5자리)
+        gu_code = condition.region_code[:5] if condition.region_code else "11440"
+        
+        # 최근 12개월 데이터 (현재 달은 데이터가 없으므로 전달부터 수집)
         months = []
-        for i in range(12):
+        for i in range(1, 13):
             m = today.month - i
             y = today.year
-            if m <= 0:
+            while m <= 0:
                 m += 12
                 y -= 1
             months.append(f"{y}{m:02d}")
@@ -209,12 +152,13 @@ class MolitCrawler(BaseCrawler):
 
                         print(f"[MolitCrawler] {prop_type} {deal_ymd} p{page_no}: {len(item_list)}건 / 총 {total_count}건")
 
+                        dong_filter = condition.region_name
                         for item in item_list:
                             # 동 필터 - 검색한 동이 있으면 해당 동만
                             dong_name = str(item.get("법정동", item.get("umdNm", ""))).strip()
-                            # 동 단위 검색 시 해당 동만 포함
-                            dong_keywords = [k for k in DONG_TO_GU.keys() if k in dong_filter]
-                            if dong_keywords and dong_name not in dong_keywords:
+                            
+                            # 검색어가 동 이름에 포함되거나, 동 이름이 검색어에 포함되는지 확인 (예: "역삼동" vs "역삼동")
+                            if dong_filter and (dong_name not in dong_filter and dong_filter not in dong_name):
                                 continue
 
                             # 가격
