@@ -95,12 +95,22 @@ class NaverCrawler(BaseCrawler):
                         except Exception:
                             area_m2 = 0.0
 
-                        # 준공연도 파싱
-                        build_year_str = str(art.get("buildingName", "-"))
-                        try:
-                            build_year = int(build_year_str[:4]) if len(build_year_str) >= 4 else 0
-                        except Exception:
-                            build_year = 0
+                        # 준공연도 파싱 (여러 필드 순서대로 시도)
+                        build_year = 0
+                        build_year_str = "-"
+                        for field in ["buildYear", "approveYear", "useApprovYmd"]:
+                            raw = art.get(field, "")
+                            if raw:
+                                raw_str = str(raw)
+                                try:
+                                    yr = int(raw_str[:4])
+                                    if 1950 <= yr <= 2030:
+                                        build_year = yr
+                                        build_year_str = str(yr)
+                                        break
+                                except Exception:
+                                    pass
+
 
                         is_new = (build_year > 0 and (CURRENT_YEAR - build_year) <= NEW_BUILD_THRESHOLD)
 

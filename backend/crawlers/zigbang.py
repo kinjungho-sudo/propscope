@@ -32,16 +32,24 @@ class ZigbangCrawler(BaseCrawler):
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "ko-KR,ko;q=0.9"
     }
-    COOKIES = {
-        "_zid": "88efeaa0-265b-11f1-97d9-67dc6ccdc3e2",
-        "afUserId": "329c63a9-2c6b-4ebd-beba-f8a4c83c9bf3-p"
-    }
+
+    def _get_session(self) -> requests.Session:
+        """직방 메인 접속으로 쿠키 자동 획득"""
+        sess = requests.Session()
+        sess.headers.update(self.HEADERS)
+        try:
+            sess.get("https://www.zigbang.com", timeout=8)
+            print("[ZigbangCrawler] Session cookies acquired")
+        except Exception as e:
+            print(f"[ZigbangCrawler] Session init failed: {e}")
+        return sess
 
     async def fetch(self, condition: FilterCondition) -> List[PropertyItem]:
         results: List[PropertyItem] = []
 
         lat = condition.lat if condition.lat and condition.lat != 0 else 37.5443
         lng = condition.lng if condition.lng and condition.lng != 0 else 126.9510
+        session = self._get_session()
 
         # precision 5 → 4 → 3 순으로 확장 시도
         for precision in [5, 4, 3]:
@@ -61,9 +69,8 @@ class ZigbangCrawler(BaseCrawler):
                 }
 
                 try:
-                    resp = requests.get(
-                        list_url, params=params,
-                        headers=self.HEADERS, cookies=self.COOKIES, timeout=10
+                    resp = session.get(
+                        list_url, params=params, timeout=10
                     )
                     print(f"[ZigbangCrawler] {target_type} | precision={precision} geohash={ghash} | status={resp.status_code}")
 
@@ -82,9 +89,8 @@ class ZigbangCrawler(BaseCrawler):
                     detail_url = f"{self.BASE_URL}/house/property/v1/items/list"
                     for i in range(0, min(len(item_ids), 100), 50):
                         batch = item_ids[i:i + 50]
-                        detail_resp = requests.post(
-                            detail_url, json={"item_ids": batch},
-                            headers=self.HEADERS, cookies=self.COOKIES, timeout=10
+                        detail_resp = session.post(
+                            detail_url, json={"item_ids": batch}, timeout=10
                         )
                         if detail_resp.status_code != 200:
                             continue
