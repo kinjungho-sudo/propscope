@@ -2,6 +2,6 @@ fastapi
 uvicorn[standard]
 pandas
 requests
-weasyprint
+fpdf2
 jinja2
 pydantic

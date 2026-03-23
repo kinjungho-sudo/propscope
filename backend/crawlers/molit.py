@@ -168,10 +168,9 @@ class MolitCrawler(BaseCrawler):
         gu_code = get_gu_code(condition.region_name)
         dong_filter = condition.region_name  # 동 이름 필터링용
 
-        today = date.today()
-        # 최근 6개월 데이터
+        # 최근 12개월 데이터 (실거래 데이터는 매물보다 양이 적으므로 범위를 넓힙니다)
         months = []
-        for i in range(6):
+        for i in range(12):
             m = today.month - i
             y = today.year
             if m <= 0:
@@ -184,115 +183,127 @@ class MolitCrawler(BaseCrawler):
             url = f"{self.BASE_URL}/{endpoint}"
 
             for deal_ymd in months:
-                params = {
-                    "serviceKey": self.api_key,
-                    "LAWD_CD": gu_code,
-                    "DEAL_YMD": deal_ymd,
-                    "numOfRows": "100",
-                    "pageNo": "1",
-                    "_type": "json"
-                }
+                page_no = 1
+                while True:
+                    params = {
+                        "serviceKey": self.api_key,
+                        "LAWD_CD": gu_code,
+                        "DEAL_YMD": deal_ymd,
+                        "numOfRows": "100",
+                        "pageNo": str(page_no),
+                        "_type": "json"
+                    }
 
-                try:
-                    resp = requests.get(url, params=params, timeout=15)
-                    print(f"[MolitCrawler] {prop_type} {deal_ymd} gu={gu_code} status={resp.status_code}")
+                    try:
+                        resp = requests.get(url, params=params, timeout=15)
+                        if resp.status_code != 200:
+                            break
 
-                    if resp.status_code != 200:
-                        continue
+                        res_json = resp.json()
+                        body = res_json.get("response", {}).get("body", {})
+                        total_count = body.get("totalCount", 0)
+                        item_list = parse_molit_items(body.get("items", {}))
+                        
+                        if not item_list:
+                            break
 
-                    body = resp.json().get("response", {}).get("body", {})
-                    item_list = parse_molit_items(body.get("items", {}))
-                    print(f"[MolitCrawler] {deal_ymd}: {len(item_list)}건")
+                        print(f"[MolitCrawler] {prop_type} {deal_ymd} p{page_no}: {len(item_list)}건 / 총 {total_count}건")
 
-                    for item in item_list:
-                        # 동 필터 - 검색한 동이 있으면 해당 동만
-                        dong_name = str(item.get("법정동", item.get("umdNm", ""))).strip()
-                        # 동 단위 검색 시 해당 동만 포함
-                        dong_keywords = [k for k in DONG_TO_GU.keys() if k in dong_filter]
-                        if dong_keywords and dong_name not in dong_keywords:
-                            continue
+                        for item in item_list:
+                            # 동 필터 - 검색한 동이 있으면 해당 동만
+                            dong_name = str(item.get("법정동", item.get("umdNm", ""))).strip()
+                            # 동 단위 검색 시 해당 동만 포함
+                            dong_keywords = [k for k in DONG_TO_GU.keys() if k in dong_filter]
+                            if dong_keywords and dong_name not in dong_keywords:
+                                continue
 
-                        # 가격
-                        price_raw = str(item.get("거래금액", item.get("dealAmount", "0"))).replace(",", "").strip()
-                        try:
-                            price_man = int(price_raw)
-                        except Exception:
-                            price_man = 0
+                            # 가격
+                            price_raw = str(item.get("거래금액", item.get("dealAmount", "0"))).replace(",", "").strip()
+                            try:
+                                price_man = int(price_raw)
+                            except Exception:
+                                price_man = 0
 
-                        if price_man <= 0:
-                            continue
+                            if price_man <= 0:
+                                continue
 
-                        # 면적
-                        area_raw = str(item.get("전용면적", item.get("excluUseAr", "0"))).strip()
-                        try:
-                            area_m2 = float(area_raw)
-                        except Exception:
-                            area_m2 = 0.0
+                            # 면적
+                            area_raw = str(item.get("전용면적", item.get("excluUseAr", "0"))).strip()
+                            try:
+                                area_m2 = float(area_raw)
+                            except Exception:
+                                area_m2 = 0.0
 
-                        # 가격/면적 필터
-                        if condition.price_min and price_man < condition.price_min:
-                            continue
-                        if condition.price_max and price_man > condition.price_max:
-                            continue
-                        if condition.area_min and area_m2 < condition.area_min:
-                            continue
+                            # 가격/면적 필터
+                            if condition.price_min and price_man < condition.price_min:
+                                continue
+                            if condition.price_max and price_man > condition.price_max:
+                                continue
+                            if condition.area_min and area_m2 < condition.area_min:
+                                continue
 
-                        # 건축연도
-                        build_year_raw = str(item.get("건축년도", item.get("buildYear", "0"))).strip()
-                        try:
-                            build_year = int(build_year_raw)
-                            is_new = 0 < build_year and (CURRENT_YEAR - build_year) <= NEW_BUILD_THRESHOLD
-                        except Exception:
-                            build_year = 0
-                            is_new = False
+                            # 건축연도
+                            build_year_raw = str(item.get("건축년도", item.get("buildYear", "0"))).strip()
+                            try:
+                                build_year = int(build_year_raw)
+                                is_new = 0 < build_year and (CURRENT_YEAR - build_year) <= NEW_BUILD_THRESHOLD
+                            except Exception:
+                                build_year = 0
+                                is_new = False
 
-                        # 준공연도 필터
-                        if condition.build_year_min and build_year > 0 and build_year < condition.build_year_min:
-                            continue
+                            # 준공연도 필터
+                            if condition.build_year_min and build_year > 0 and build_year < condition.build_year_min:
+                                continue
 
-                        # 거래날짜 및 주소
-                        deal_y = str(item.get("년", item.get("dealYear", ""))).strip()
-                        deal_m = str(item.get("월", item.get("dealMonth", ""))).strip().zfill(2)
-                        deal_d = str(item.get("일", item.get("dealDay", ""))).strip().zfill(2)
-                        road_nm = str(item.get("도로명", item.get("roadNm", ""))).strip()
-                        floor_raw = str(item.get("층", item.get("floor", "-"))).strip()
+                            # 거래날짜 및 주소
+                            deal_y = str(item.get("년", item.get("dealYear", ""))).strip()
+                            deal_m = str(item.get("월", item.get("dealMonth", ""))).strip().zfill(2)
+                            deal_d = str(item.get("일", item.get("dealDay", ""))).strip().zfill(2)
+                            road_nm = str(item.get("도로명", item.get("roadNm", ""))).strip()
+                            floor_raw = str(item.get("층", item.get("floor", "-"))).strip()
 
-                        # 건물명 (연립다세대 vs 오피스텔)
-                        bld_name = (
-                            item.get("연립다세대") or
-                            item.get("아파트") or
-                            item.get("단지명") or
-                            item.get("offiNm") or
-                            dong_name + " 매물"
-                        )
+                            # 건물명 (연립다세대 vs 오피스텔)
+                            bld_name = (
+                                item.get("연립다세대") or
+                                item.get("아파트") or
+                                item.get("단지명") or
+                                item.get("offiNm") or
+                                dong_name + " 매물"
+                            )
 
-                        address = f"서울 {dong_filter} {dong_name}"
-                        if road_nm:
-                            address += f" {road_nm}"
+                            address = f"서울 {dong_filter} {dong_name}"
+                            if road_nm:
+                                address += f" {road_nm}"
 
-                        prop = PropertyItem(
-                            source="molit",
-                            property_type=prop_type,
-                            name=str(bld_name).strip(),
-                            address=address.strip(),
-                            price=format_price(price_man),
-                            price_man=price_man,
-                            price_per_pyung=calc_pyung_price(price_man, area_m2),
-                            area=str(area_m2),
-                            floor=floor_raw,
-                            build_year=build_year_raw if build_year > 0 else "-",
-                            is_new=is_new,
-                            description=f"실거래 {deal_y}.{deal_m}.{deal_d}",
-                            url="https://rt.molit.go.kr",
-                            lat=0.0,
-                            lng=0.0
-                        )
-                        results.append(prop)
+                            prop = PropertyItem(
+                                source="molit",
+                                property_type=prop_type,
+                                name=str(bld_name).strip(),
+                                address=address.strip(),
+                                price=format_price(price_man),
+                                price_man=price_man,
+                                price_per_pyung=calc_pyung_price(price_man, area_m2),
+                                area=str(area_m2),
+                                floor=floor_raw,
+                                build_year=build_year_raw if build_year > 0 else "-",
+                                is_new=is_new,
+                                description=f"실거래 {deal_y}.{deal_m}.{deal_d}",
+                                url="https://rt.molit.go.kr",
+                                lat=0.0,
+                                lng=0.0
+                            )
+                            results.append(prop)
 
-                except Exception as e:
-                    print(f"[MolitCrawler] Error {deal_ymd}: {e}")
+                        # 다음 페이지 확인
+                        if page_no * 100 >= total_count or page_no >= 10:
+                            break
+                        page_no += 1
 
-                await asyncio.sleep(0.3)
+                    except Exception as e:
+                        print(f"[MolitCrawler] Error {deal_ymd} p{page_no}: {e}")
+                        break
+
+                    await asyncio.sleep(0.3)
 
         print(f"[MolitCrawler] Total: {len(results)}")
         return results

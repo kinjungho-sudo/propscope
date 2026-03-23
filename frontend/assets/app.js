@@ -333,21 +333,85 @@ function formatWan(man) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 📍 카카오맵 마커
+// 📍 카카오맵 마커 (건물명 + 실거래가)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let activeOverlay = null;
+
 function addMarker(item) {
     if (!item.lat || !item.lng || item.lat === 0) return;
     const pos = new kakao.maps.LatLng(item.lat, item.lng);
-    const cls = item.source === 'naver' ? 'marker-naver' : 'marker-zigbang';
-    const content = `<div class="marker-bubble ${cls}">${item.price_per_pyung || item.price}</div>`;
-    const overlay = new kakao.maps.CustomOverlay({ position: pos, content, yAnchor: 1.5 });
+
+    // 마커 콘텐츠 (건물명 일부 + 가격)
+    const shortName = item.name.length > 6 ? item.name.slice(0, 5) + '..' : item.name;
+    const content = `
+        <div class="marker-wrapper" onclick="showItemDetail('${item.name}')">
+            <div class="marker-bubble molit">
+                <span class="m-name">${shortName}</span>
+                <span class="m-price">${item.price}</span>
+            </div>
+            <div class="marker-pin"></div>
+        </div>`;
+
+    const overlay = new kakao.maps.CustomOverlay({
+        position: pos,
+        content: content,
+        yAnchor: 1.1
+    });
+
     overlay.setMap(map);
     markers.push(overlay);
 }
 
+// 지도 위 항목 클릭 시 상세 표시
+function showItemDetail(name) {
+    const item = allItems.find(it => it.name === name);
+    if (!item) return;
+
+    if (activeOverlay) activeOverlay.setMap(null);
+
+    const content = `
+        <div class="map-detail-card">
+            <div class="card-header">
+                <span class="badge molit">국토부 실거래</span>
+                <button onclick="closeDetail()" class="btn-close-mini">×</button>
+            </div>
+            <div class="card-body">
+                <h3>${item.name}</h3>
+                <p class="addr">${item.address}</p>
+                <div class="specs">
+                    <div class="spec"><span>전용</span><strong>${item.area}㎡</strong></div>
+                    <div class="spec"><span>층수</span><strong>${item.floor}층</strong></div>
+                    <div class="spec"><span>준공</span><strong>${item.build_year}년</strong></div>
+                </div>
+                <div class="price-row">
+                    <span class="label">실거래가</span>
+                    <span class="val">${item.price}</span>
+                </div>
+                <p class="desc">${item.description}</p>
+            </div>
+            <div class="card-footer">
+                <a href="${item.url}" target="_blank">자세히 보기 <i class="fas fa-chevron-right"></i></a>
+            </div>
+        </div>`;
+
+    activeOverlay = new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(item.lat, item.lng),
+        content: content,
+        yAnchor: 1.05
+    });
+
+    activeOverlay.setMap(map);
+    map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
+}
+
+window.closeDetail = () => {
+    if (activeOverlay) activeOverlay.setMap(null);
+};
+
 function clearMarkers() {
     markers.forEach(m => m.setMap(null));
     markers = [];
+    if (activeOverlay) activeOverlay.setMap(null);
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
