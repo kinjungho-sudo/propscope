@@ -73,8 +73,16 @@ class NaverCrawler(BaseCrawler):
             )
 
             try:
-                resp = session.get(api_url, timeout=15)
-                print(f"[NaverCrawler] Page {page_num} Status: {resp.status_code}")
+                resp = None
+                for attempt in range(3):  # 최대 3회 재시도
+                    resp = session.get(api_url, timeout=15)
+                    print(f"[NaverCrawler] Page {page_num} attempt={attempt+1} Status: {resp.status_code}")
+                    if resp.status_code == 429:
+                        wait = (attempt + 1) * 3
+                        print(f"[NaverCrawler] 429 Rate limit - waiting {wait}s...")
+                        await asyncio.sleep(wait)
+                        continue
+                    break
 
                 if resp.status_code == 200:
                     data = resp.json()

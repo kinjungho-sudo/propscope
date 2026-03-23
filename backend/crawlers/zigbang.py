@@ -51,17 +51,16 @@ class ZigbangCrawler(BaseCrawler):
         lng = condition.lng if condition.lng and condition.lng != 0 else 126.9510
         session = self._get_session()
 
-        # precision 5 → 4 → 3 순으로 확장 시도
-        for precision in [5, 4, 3]:
+        # precision 4 → 3 으로 확장 시도 (5는 셀이 너무 좁아 매물 없을 수 있음)
+        for precision in [4, 3]:
             ghash = encode_geohash(lat, lng, precision=precision)
-            collected = 0
 
             for target_type in condition.property_types:
                 service_path = "villas" if target_type == "빌라" else "officetels"
                 list_url = f"{self.BASE_URL}/house/property/v1/items/{service_path}"
                 params = {
                     "geohash": ghash,
-                    "salesType": "매매",      # ← 매매 필터 명시
+                    "salesType": "매매",
                     "salesPriceMin": condition.price_min or 0,
                     "salesPriceMax": condition.price_max or 0,
                     "depositMin": 0,
@@ -69,30 +68,40 @@ class ZigbangCrawler(BaseCrawler):
                 }
 
                 try:
-                    resp = session.get(
-                        list_url, params=params, timeout=10
-                    )
+                    resp = session.get(list_url, params=params, timeout=10)
                     print(f"[ZigbangCrawler] {target_type} | precision={precision} geohash={ghash} | status={resp.status_code}")
 
                     if resp.status_code != 200:
                         continue
 
-                    item_ids = resp.json().get("item_ids", [])
-                    print(f"[ZigbangCrawler] IDs found: {len(item_ids)}")
+                    resp_data = resp.json()
+
+                    # ✅ 신 API: items=[{id, lat, lng}, ...]
+                    # ✅ 구 API: item_ids=[...] (fallback)
+                    raw_items = resp_data.get("items", [])
+                    if raw_items:
+                        # 반경 필터: 목표 좌표에서 ±0.05도 (약 5km) 이내만 사용
+                        def in_range(it):
+                            return (abs(it.get("lat", 0) - lat) < 0.05 and
+                                    abs(it.get("lng", 0) - lng) < 0.05)
+                        item_ids = [it["id"] for it in raw_items if in_range(it)]
+                    else:
+                        item_ids = resp_data.get("item_ids", [])
+
+                    print(f"[ZigbangCrawler] IDs (after geo-filter): {len(item_ids)}")
 
                     if not item_ids:
                         continue
 
-                    collected += len(item_ids)
-
-                    # 상세 조회 (50개 배치)
+                    # 상세 조회 (50개 배치, 최대 150개)
                     detail_url = f"{self.BASE_URL}/house/property/v1/items/list"
-                    for i in range(0, min(len(item_ids), 100), 50):
+                    for i in range(0, min(len(item_ids), 150), 50):
                         batch = item_ids[i:i + 50]
                         detail_resp = session.post(
                             detail_url, json={"item_ids": batch}, timeout=10
                         )
                         if detail_resp.status_code != 200:
+                            print(f"[ZigbangCrawler] detail status={detail_resp.status_code}")
                             continue
 
                         for item in detail_resp.json().get("items", []):
@@ -102,7 +111,7 @@ class ZigbangCrawler(BaseCrawler):
                             price_man = item.get("sales_price", 0)
                             area_m2 = float(item.get("m2", 0))
 
-                            # 필터 적용
+                            # 가격/면적 필터
                             if condition.price_min and price_man < condition.price_min:
                                 continue
                             if condition.price_max and price_man > condition.price_max:
@@ -119,6 +128,7 @@ class ZigbangCrawler(BaseCrawler):
                                 build_year_int = 0
                                 is_new = False
 
+                            item_id = item.get("item_id") or item.get("id", "")
                             prop = PropertyItem(
                                 source="zigbang",
                                 property_type=target_type,
@@ -132,18 +142,17 @@ class ZigbangCrawler(BaseCrawler):
                                 build_year=str(build_year_raw),
                                 is_new=is_new,
                                 description=item.get("description", ""),
-                                url=f"https://www.zigbang.com/home/share/item/{item.get('item_id')}",
+                                url=f"https://www.zigbang.com/home/share/item/{item_id}",
                                 lat=float(item.get("lat", 0.0)),
                                 lng=float(item.get("lng", 0.0))
                             )
                             results.append(prop)
 
-                        await asyncio.sleep(0.5)
+                        await asyncio.sleep(0.3)
 
                 except Exception as e:
                     print(f"[ZigbangCrawler] Error: {e}")
 
-            # 매물이 생기면 정밀도 낮춰서 재시도 안 해도 됨
             if results:
                 break
 
