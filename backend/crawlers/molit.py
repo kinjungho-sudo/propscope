@@ -84,6 +84,43 @@ def calc_pyung_price(price_man: int, area_m2: float) -> str:
     return f"{per_pyung:,}만원/평"
 
 
+def get_sample_data(condition: FilterCondition) -> List[PropertyItem]:
+    """API 미활성화 시 샘플 데이터 반환 (UI 확인용)"""
+    samples = [
+        {"name": "공덕 한신휴플러스", "dong": "공덕동", "price_man": 45000, "area_m2": 59.9, "floor": "4", "build_year": "2008", "is_new": False},
+        {"name": "공덕 래미안", "dong": "공덕동", "price_man": 52000, "area_m2": 84.2, "floor": "7", "build_year": "2012", "is_new": False},
+        {"name": "마포 신축빌라", "dong": "아현동", "price_man": 38000, "area_m2": 49.5, "floor": "2", "build_year": "2021", "is_new": True},
+        {"name": "공덕 신영지웰", "dong": "공덕동", "price_man": 61000, "area_m2": 101.2, "floor": "9", "build_year": "2015", "is_new": False},
+        {"name": "마포 아현역 1단지", "dong": "아현동", "price_man": 41500, "area_m2": 55.6, "floor": "3", "build_year": "2004", "is_new": False},
+        {"name": "공덕 현대오피스텔", "dong": "공덕동", "price_man": 28000, "area_m2": 33.0, "floor": "6", "build_year": "2019", "is_new": True},
+        {"name": "마포 성산시영", "dong": "성산동", "price_man": 55000, "area_m2": 76.8, "floor": "5", "build_year": "1993", "is_new": False},
+        {"name": "공덕 신축다세대", "dong": "공덕동", "price_man": 33000, "area_m2": 42.1, "floor": "2", "build_year": "2022", "is_new": True},
+    ]
+    results = []
+    for s in samples:
+        price_man = s["price_man"]
+        area_m2 = s["area_m2"]
+        build_year = int(s["build_year"])
+        results.append(PropertyItem(
+            source="molit",
+            property_type="빌라",
+            name=s["name"],
+            address=f"서울 마포구 {s['dong']}",
+            price=format_price(price_man),
+            price_man=price_man,
+            price_per_pyung=calc_pyung_price(price_man, area_m2),
+            area=str(area_m2),
+            floor=s["floor"],
+            build_year=s["build_year"],
+            is_new=s["is_new"],
+            description="[샘플] 실거래가 API 키 활성화 대기 중",
+            url="https://rt.molit.go.kr",
+            lat=37.5443 + (hash(s["name"]) % 100) * 0.0005,
+            lng=126.9510 + (hash(s["dong"]) % 100) * 0.0005
+        ))
+    return results
+
+
 def parse_molit_items(raw: dict | list) -> list:
     """MOLIT API items 필드를 안전하게 리스트로 변환"""
     if isinstance(raw, list):
@@ -110,8 +147,22 @@ class MolitCrawler(BaseCrawler):
 
     async def fetch(self, condition: FilterCondition) -> List[PropertyItem]:
         if not self.api_key:
-            print("[MolitCrawler] MOLIT_API_KEY 없음 → 데이터 없음")
-            return []
+            print("[MolitCrawler] MOLIT_API_KEY 없음 → 샘플 데이터 반환")
+            return get_sample_data(condition)
+
+        # API 활성화 확인 (첫 요청으로 테스트)
+        test_url = (
+            f"{self.BASE_URL}/getRTMSDataSvcRHTrade"
+            f"?serviceKey={self.api_key}&LAWD_CD=11440&DEAL_YMD=202502&numOfRows=1&pageNo=1&_type=json"
+        )
+        try:
+            test_resp = requests.get(test_url, timeout=10)
+            if test_resp.status_code != 200:
+                print(f"[MolitCrawler] API 미활성화 (status={test_resp.status_code}) → 샘플 데이터 반환")
+                return get_sample_data(condition)
+        except Exception as e:
+            print(f"[MolitCrawler] API 연결 실패: {e} → 샘플 데이터")
+            return get_sample_data(condition)
 
         results = []
         gu_code = get_gu_code(condition.region_name)
