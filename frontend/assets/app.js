@@ -163,10 +163,11 @@ function updateUI(data) {
             <td style="color: #2563EB; font-weight:700;">${item.price}</td>
             <td>${item.area}㎡</td>
             <td>${item.floor}</td>
+            <td>${item.build_year || '-'}</td>
             <td>
-                <a href="${mapUrl}" target="_blank" style="text-decoration:none; color:var(--primary); font-size:12px; display:flex; align-items:center; gap:4px; font-weight:700;">
-                    <i class="fas fa-map-location-dot"></i> 열기
-                </a>
+                <button onclick="window.open('${mapUrl}')" class="btn-item-link">
+                    <i class="fas fa-external-link-alt"></i>
+                </button>
             </td>
         `;
         listBody.appendChild(row);

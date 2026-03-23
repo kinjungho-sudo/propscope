@@ -4,6 +4,7 @@ from typing import List
 from .base import BaseCrawler
 from ..models.filter import FilterCondition
 from ..models.property import PropertyItem
+from ..utils.price_parser import format_price
 
 class NaverCrawler(BaseCrawler):
     """네이버 부동산 매물 수집기 (Playwright 활용 버전)"""
@@ -58,9 +59,9 @@ class NaverCrawler(BaseCrawler):
                     
                     for art in articles:
                         price = art.get("dealPrice", "0")
-                        # 억 단위 포맷팅
-                        price_int = int(price.replace(",", "")) if isinstance(price, str) else price
-                        price_str = f"{price_int // 10000}억 {price_int % 10000:,}만원" if price_int >= 10000 else f"{price_int:,}만원"
+                        # 가격 파싱 (예: "300,000" -> 300000)
+                        price_val = int(price.replace(",", "")) if isinstance(price, str) else price
+                        price_str = format_price(price_val)
                         
                         prop = PropertyItem(
                             source="naver",

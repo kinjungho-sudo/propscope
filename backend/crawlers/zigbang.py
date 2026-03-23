@@ -6,6 +6,7 @@ from .base import BaseCrawler
 from ..models.filter import FilterCondition
 from ..models.property import PropertyItem
 from ..utils.geohash import encode_geohash
+from ..utils.price_parser import format_price
 
 class ZigbangCrawler(BaseCrawler):
     """직방 매매 매물 수집기 (v1/house/property API 대응)"""
