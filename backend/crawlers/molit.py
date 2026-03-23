@@ -98,22 +98,13 @@ class MolitCrawler(BaseCrawler):
             f"{self.BASE_URL}/getRTMSDataSvcRHTrade"
             f"?serviceKey={self.api_key}&LAWD_CD=11440&DEAL_YMD=202502&numOfRows=1&pageNo=1&_type=json"
         )
-        try:
-            test_resp = requests.get(test_url, timeout=10)
-            if test_resp.status_code != 200:
-                print(f"[MolitCrawler] API 미활성화 (status={test_resp.status_code}) → 샘플 데이터 반환")
-                return get_sample_data(condition)
-        except Exception as e:
-            print(f"[MolitCrawler] API 연결 실패: {e} → 샘플 데이터")
-            return get_sample_data(condition)
-
         results = []
         # 시군구 코드 (10자리 법정동코드의 앞 5자리)
         gu_code = condition.region_code[:5] if condition.region_code else "11440"
         
-        # 최근 12개월 데이터 (현재 달은 데이터가 없으므로 전달부터 수집)
+        # 최근 6개월 데이터 (수집 속도 최적화를 위해 12 -> 6개월로 조정)
         months = []
-        for i in range(1, 13):
+        for i in range(1, 7):
             m = today.month - i
             y = today.year
             while m <= 0:
