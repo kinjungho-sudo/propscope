@@ -4,154 +4,200 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PropScope — 은행 여신 시세 분석기</title>
-    <meta name="description" content="네이버부동산·직방 실시간 매매 시세를 한눈에 분석하고 PDF 감정 리포트를 생성합니다.">
+    <meta name="description" content="동 단위 빌라·오피스텔 매매 실거래가 분석 및 PDF 감정 리포트 생성">
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
-    <div class="app-layout">
-        <!-- 📍 Left Side Panel -->
-        <aside class="side-panel">
-            <header class="panel-header">
-                <h1 class="logo">PropScope <i class="fas fa-gem" style="font-size: 14px; color: #7C4DFF;"></i></h1>
-                <span class="logo-sub">은행 여신 시세 분석기</span>
-            </header>
+<div class="app-layout">
+    <!-- 📍 Left Side Panel -->
+    <aside class="side-panel">
+        <header class="panel-header">
+            <h1 class="logo">PropScope <i class="fas fa-gem" style="font-size:13px;color:#7C4DFF;"></i></h1>
+            <span class="logo-sub">은행 여신 · 실거래가 시세 분석기</span>
+        </header>
 
-            <div class="panel-scroll">
-                <!-- Search Box -->
-                <div class="search-container">
-                    <div class="search-bar">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="inputRegion" placeholder="동·지역 검색 (예: 마포구 공덕동)" value="마포구 공덕동">
-                    </div>
+        <div class="panel-scroll">
+
+            <!-- ① 동 단위 검색 -->
+            <div class="search-section">
+                <h3 class="section-title"><i class="fas fa-map-marker-alt" style="color:#7C4DFF;margin-right:6px;"></i>동 단위 검색</h3>
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="inputRegion"
+                           placeholder="예: 마포구 공덕동 / 강남구 역삼동"
+                           value="마포구 공덕동">
                 </div>
+                <p class="search-hint">📌 구+동 형식으로 입력하시면 더 정확해요!</p>
+            </div>
 
-                <!-- 주거 형태 필터 (토글 버튼만 유지, 상단 탭 제거) -->
-                <div class="filter-section">
-                    <h3 class="section-title">주거 형태 <span>(다중 선택)</span></h3>
-                    <div class="toggle-group">
-                        <button class="toggle active" data-type="빌라">빌라 (다세대)</button>
-                        <button class="toggle active" data-type="오피스텔">오피스텔</button>
-                    </div>
-                </div>
-
-                <div class="filter-section">
-                    <h3 class="section-title">매매가 <span>(단위: 만원)</span></h3>
-                    <div class="range-inputs">
-                        <div class="input-wrap">
-                            <input type="number" id="priceMin" value="5000" step="1000">
-                            <span class="input-label">최소</span>
-                        </div>
-                        <span class="dash">-</span>
-                        <div class="input-wrap">
-                            <input type="number" id="priceMax" value="200000" step="1000">
-                            <span class="input-label">최대</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="filter-section half-grid">
-                    <div>
-                       <h3 class="section-title">전용면적 <span>(㎡)</span></h3>
-                       <div class="range-inputs narrow-inputs">
-                           <div class="input-wrap"><input type="number" id="areaMin" value="15"></div>
-                           <span class="dash">-</span>
-                           <div class="input-wrap"><input type="number" id="areaMax" value="200"></div>
-                       </div>
-                    </div>
-                    <div>
-                       <h3 class="section-title">준공연도 <span>(이후)</span></h3>
-                       <div class="slider-wrap">
-                           <input type="range" id="buildYear" min="1980" max="2024" value="2000" oninput="document.getElementById('yearVal').innerText = this.value + '년'">
-                           <div class="range-val" id="yearVal">2000년</div>
-                       </div>
-                    </div>
-                </div>
-
-                <!-- Action Button -->
-                <div class="action-section">
-                    <button id="btnSearch" class="btn-primary">
-                        <i class="fas fa-crosshairs"></i> 정밀 시세 조회
+            <!-- ② 주거 형태 (다세대 · 주거용 오피스텔) -->
+            <div class="filter-section">
+                <h3 class="section-title">주거 형태</h3>
+                <div class="toggle-group">
+                    <button class="toggle active" data-type="빌라">
+                        <i class="fas fa-building-user"></i> 빌라·다세대
                     </button>
-                    <button id="btnDownloadPdf" class="btn-secondary">
-                        <i class="fas fa-file-pdf"></i> PDF 리포트 저장
+                    <button class="toggle active" data-type="오피스텔">
+                        <i class="fas fa-city"></i> 주거용 오피스텔
                     </button>
                 </div>
+            </div>
 
-                <!-- 통합 데이터 브리핑 (사이드바 하단) -->
-                <div id="statsPanel" class="stats-panel" style="display: none;">
-                    <h3 class="section-title" style="margin-bottom:12px;"><i class="fas fa-chart-pie" style="color:#7C4DFF"></i> 통합 시세 브리핑</h3>
-                    <div class="stat-grid">
-                        <div class="stat-box">
-                            <span class="label">평균 매매가</span>
-                            <span class="val" id="statAvgPrice">-</span>
-                        </div>
-                        <div class="stat-box">
-                            <span class="label">중위 매매가</span>
-                            <span class="val" id="statMedianPrice">-</span>
-                        </div>
-                        <div class="stat-box">
-                            <span class="label">최저가</span>
-                            <span class="val" id="statMinPrice">-</span>
-                        </div>
-                        <div class="stat-box">
-                            <span class="label">최고가</span>
-                            <span class="val" id="statMaxPrice">-</span>
-                        </div>
+            <!-- 매매가 필터 -->
+            <div class="filter-section">
+                <h3 class="section-title">매매가 <span>(만원)</span></h3>
+                <div class="range-inputs">
+                    <div class="input-wrap">
+                        <input type="number" id="priceMin" value="5000" step="1000">
+                        <span class="input-label">최소</span>
                     </div>
-                    <div class="stat-footer">
-                        <span id="statGapNote" class="gap-note">-</span>
+                    <span class="dash">~</span>
+                    <div class="input-wrap">
+                        <input type="number" id="priceMax" value="200000" step="1000">
+                        <span class="input-label">최대</span>
                     </div>
                 </div>
             </div>
-            
-            <!-- List Trigger (Bottom Sticky) -->
-            <div class="list-summary" id="listHandle">
-                <div class="summary-text">
-                    <i class="fas fa-list-ul"></i>
-                    <span id="itemCount">조회 결과가 여기에 표시됩니다</span>
+
+            <!-- 면적 + 준공연도 -->
+            <div class="filter-section half-grid">
+                <div>
+                    <h3 class="section-title">전용면적 <span>(㎡)</span></h3>
+                    <div class="range-inputs narrow-inputs">
+                        <div class="input-wrap"><input type="number" id="areaMin" value="15"></div>
+                        <span class="dash">~</span>
+                        <div class="input-wrap"><input type="number" id="areaMax" value="200"></div>
+                    </div>
                 </div>
-                <i class="fas fa-chevron-up chevron"></i>
+                <div>
+                    <h3 class="section-title">준공연도 <span>(이후)</span></h3>
+                    <div class="slider-wrap">
+                        <input type="range" id="buildYear" min="1980" max="2024" value="2000"
+                               oninput="document.getElementById('yearVal').innerText = this.value + '년'">
+                        <div class="range-val" id="yearVal">2000년</div>
+                    </div>
+                </div>
             </div>
-        </aside>
 
-        <!-- 🗺️ Main Map Area -->
-        <main class="map-view">
-            <div id="map" class="map-container"></div>
-        </main>
-    </div>
+            <!-- ③ 온디맨드 조회 버튼 -->
+            <div class="action-section">
+                <button id="btnSearch" class="btn-primary">
+                    <i class="fas fa-crosshairs"></i> 지금 시세 조회
+                </button>
+                <button id="btnDownloadPdf" class="btn-secondary">
+                    <i class="fas fa-file-pdf"></i> 감정 리포트 PDF 저장
+                </button>
+            </div>
 
-    <!-- 📋 Slide-up List Modal -->
-    <div id="listView" class="list-view-modal">
-        <div class="modal-header">
-            <h3><i class="fas fa-building" style="color:#7C4DFF; margin-right:8px;"></i> 상세 매물 카탈로그</h3>
-            <button class="btn-close" id="listClose"><i class="fas fa-times"></i></button>
+            <!-- 통합 시세 브리핑 (조회 후 표시) -->
+            <div id="statsPanel" class="stats-panel" style="display:none;">
+                <h3 class="section-title" style="margin-bottom:12px;">
+                    <i class="fas fa-chart-bar" style="color:#7C4DFF;"></i> 실거래가 분석 요약
+                </h3>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <span class="label">평균 매매가</span>
+                        <span class="val" id="statAvgPrice">-</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">중위 매매가</span>
+                        <span class="val" id="statMedianPrice">-</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">최저가</span>
+                        <span class="val" id="statMinPrice">-</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">최고가</span>
+                        <span class="val" id="statMaxPrice">-</span>
+                    </div>
+                    <div class="stat-box highlight-box">
+                        <span class="label">평균 평당가</span>
+                        <span class="val" id="statPyungPrice" style="color:#7C4DFF;">-</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="label">시세 변동성</span>
+                        <span class="val" id="statStdDev">-</span>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <span id="statGapNote" class="gap-note">-</span>
+                </div>
+
+                <!-- ④ 신축 분양율 섹션 -->
+                <div id="newBuildSection" style="display:none; margin-top:16px;">
+                    <div class="new-build-banner">
+                        <i class="fas fa-star" style="color:#FFD700;"></i>
+                        <strong>신축 매물 감지됨!</strong>
+                        <span id="newBuildCount">0건</span>
+                    </div>
+                    <div class="new-build-stats">
+                        <div>
+                            <span class="label">신축 평균가</span>
+                            <span id="newBuildAvg">-</span>
+                        </div>
+                        <div>
+                            <span class="label">신축 평당가</span>
+                            <span id="newBuildPyung">-</span>
+                        </div>
+                        <div class="sale-rate-note">
+                            <i class="fas fa-info-circle"></i>
+                            분양율은 각 단지 개별 확인이 필요합니다.<br>
+                            <a id="newBuildNaverLink" href="#" target="_blank">네이버 부동산에서 분양율 확인 →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
-        <div class="modal-body">
-            <table id="propertyTable" class="premium-table">
-                <thead>
-                    <tr>
-                        <th>플랫폼</th>
-                        <th>유형</th>
-                        <th>매물명</th>
-                        <th>매매금액</th>
-                        <th>면적 (㎡)</th>
-                        <th>해당층</th>
-                        <th>준공년도</th>
-                        <th>링크</th>
-                    </tr>
-                </thead>
-                <tbody id="propertyList">
-                </tbody>
-            </table>
-        </div>
-    </div>
 
-    <!-- Kakao Map SDK (배포 도메인 등록 후 활성화) -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=882a712230678852cb0e6c255561ea08&libraries=services,clusterer"></script>
-    <script src="assets/config.js"></script>
-    <script src="assets/app.js"></script>
+        <!-- 매물 리스트 핸들 -->
+        <div class="list-summary" id="listHandle">
+            <div class="summary-text">
+                <i class="fas fa-list-ul"></i>
+                <span id="itemCount">조회 결과가 여기에 표시됩니다</span>
+            </div>
+            <i class="fas fa-chevron-up chevron"></i>
+        </div>
+    </aside>
+
+    <!-- 🗺️ 지도 영역 -->
+    <main class="map-view">
+        <div id="map" class="map-container"></div>
+    </main>
+</div>
+
+<!-- 📋 슬라이드업 매물 목록 -->
+<div id="listView" class="list-view-modal">
+    <div class="modal-header">
+        <h3><i class="fas fa-building" style="color:#7C4DFF;margin-right:8px;"></i> 실거래가 매물 목록</h3>
+        <button class="btn-close" id="listClose"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+        <table id="propertyTable" class="premium-table">
+            <thead>
+                <tr>
+                    <th>플랫폼</th>
+                    <th>유형</th>
+                    <th>매물명</th>
+                    <th>매매금액</th>
+                    <th>평당가 💡</th>
+                    <th>면적(㎡)</th>
+                    <th>층</th>
+                    <th>준공</th>
+                    <th>링크</th>
+                </tr>
+            </thead>
+            <tbody id="propertyList"></tbody>
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=882a712230678852cb0e6c255561ea08&libraries=services,clusterer"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
 </body>
 </html>
