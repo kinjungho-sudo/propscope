@@ -323,6 +323,8 @@ body {
 .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
 .badge.naver { background: rgba(3, 199, 90, 0.15); color: #03C75A; }
 .badge.zigbang { background: rgba(255, 110, 48, 0.15); color: #FF6E30; }
+.badge.molit { background: rgba(124, 77, 255, 0.15); color: #7C4DFF; }
+
 
 /* 동 단위 검색 섹션 */
 .search-section { margin-bottom: 24px; }

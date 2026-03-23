@@ -163,7 +163,7 @@ function updateUI(data) {
     setText('statGapNote',     comparison.gap_note        || "단일 소스 데이터");
 
     // ── 카운터 ──
-    setText('itemCount', `총 ${total}건 (네이버 ${data.naver_count||0} · 직방 ${data.zigbang_count||0})`);
+    setText('itemCount', `총 ${total}건 (국토교통부 실거래가 기준)`);
 
     // ── 신축 분양율 섹션 ──
     const newItems = (data.items || []).filter(it => it.is_new);
@@ -240,7 +240,7 @@ function renderTable(items) {
         const row = document.createElement('tr');
         if (isNew) row.classList.add('row-new');
         row.innerHTML = `
-            <td><span class="badge ${item.source}">${item.source === 'naver' ? '네이버' : '직방'}</span></td>
+            <td><span class="badge ${item.source}">${item.source === 'molit' ? '국토부' : item.source === 'naver' ? '네이버' : '직방'}</span></td>
             <td>${item.property_type}</td>
             <td>
                 ${isNew ? '<span class="badge-new">🏗️ 신축</span> ' : ''}
