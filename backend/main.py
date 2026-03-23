@@ -217,9 +217,10 @@ def get_region_code(region: str):
         "자양동":    {"code": "1121510600", "lat": 37.5356, "lng": 127.0855},
     }
 
-    # 정확히 일치하는 동명 우선, 그 다음 부분 일치
+    # 정확히 일치하는 동명 우선, 그 다음 상호 포함 관계 확인
+    # 1. 완전 일치
     for key, val in STATIC_MAP.items():
-        if key == region_clean or region_clean.endswith(key):
+        if key == region_clean:
             print(f"[RegionCode] Static exact match: {key}")
             return JSONResponse({
                 "region": key,
@@ -229,9 +230,10 @@ def get_region_code(region: str):
                 "full_address": region_clean
             })
 
+    # 2. 부분 일치 (예: "공덕" -> "공덕동", "강남구 역삼동" -> "역삼동")
     for key, val in STATIC_MAP.items():
-        if key in region_clean:
-            print(f"[RegionCode] Static partial match: {key}")
+        if region_clean in key or key in region_clean:
+            print(f"[RegionCode] Static fuzzy match: search='{region_clean}' matched key='{key}'")
             return JSONResponse({
                 "region": key,
                 "code": val["code"],
@@ -246,7 +248,7 @@ def get_region_code(region: str):
         "code": "1144010200",
         "lat": 37.5443,
         "lng": 126.9510,
-        "full_address": region
+        "full_address": f"{region} (매칭 실패 - 공덕동 대체)"
     })
 
 
