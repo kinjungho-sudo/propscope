@@ -1,6 +1,5 @@
 fastapi
 uvicorn[standard]
-playwright
 pandas
 requests
 weasyprint
