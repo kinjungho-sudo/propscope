@@ -17,13 +17,21 @@ function initMap() {
     try {
         const container = document.getElementById('map');
         if (typeof kakao === 'undefined' || !kakao.maps) {
-            console.warn("Kakao Maps SDK not loaded. Entering mock mode.");
+            console.warn("Kakao Maps SDK not loaded. Entering premium mock mode.");
             if (container) {
                 container.innerHTML = `
-                    <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1e1e1e; color:#E0E0E0; text-align:center; padding:20px; border:1px solid #333;">
-                        <i class="fas fa-map-marked-alt" style="font-size:48px; margin-bottom:16px; color:var(--primary);"></i>
-                        <h3 style="margin-bottom:8px;">지도 프리뷰가 제한됨</h3>
-                        <p style="font-size:14px; line-height:1.6; opacity:0.8;">현재 로컬 환경에서 지도를 불러올 수 없지만,<br><b>검색 및 데이터 분석 기능은 정상 작동합니다!</b> 😍</p>
+                    <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#121212; color:#FFFFFF; text-align:center; padding:40px;">
+                        <div style="background:rgba(124, 77, 255, 0.1); width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:24px;">
+                            <i class="fas fa-map-marked-alt" style="font-size:32px; color:var(--primary);"></i>
+                        </div>
+                        <h3 style="margin-bottom:12px; font-weight:800; font-size:20px;">지도 SDK 로드 대기 중</h3>
+                        <p style="font-size:14px; line-height:1.6; color:var(--text-light); max-width:300px;">
+                            카카오맵 API 키를 등록하고 도메인을 설정하시면 <br>
+                            <b style="color:var(--primary)">실시간 시세 지도</b>가 여기에 나타납니다! ✨
+                        </p>
+                        <div style="margin-top:32px; padding:16px; background:#1C1B1B; border-radius:12px; font-size:12px; color:#A0A0A0; border:1px solid var(--border);">
+                            💡 <a href="https://developers.kakao.com" target="_blank" style="color:var(--primary); text-decoration:none;">Kakao Developers</a>에서<br>JS 키를 발급받아 index.html에 넣어주세요!
+                        </div>
                     </div>
                 `;
             }
@@ -35,6 +43,9 @@ function initMap() {
             level: 5
         };
         map = new kakao.maps.Map(container, options);
+        
+        // 다크 모드 느낌을 주기 위해 지도 스타일 조정 (SDK에서 지원하는 경우)
+        // 지도가 로드된 후 추가 로직...
     } catch (e) {
         console.error("Map Init Error:", e);
         map = null;
@@ -128,13 +139,17 @@ async function performSearch() {
 function updateUI(data) {
     // 1. 통계 패널 업데이트
     document.getElementById('statsPanel').style.display = 'block';
-    document.getElementById('statAvgPrice').innerText = data.stats.avg_price_str;
-    document.getElementById('statMinMax').innerText = `${data.stats.min_price_str} / ${data.stats.max_price_str}`;
-    document.getElementById('statGap').innerText = data.stats.price_gap_str;
-    document.getElementById('statGapNote').innerText = data.stats.gap_note || "비교 데이터가 충분하지 않아요.";
+    
+    // 분석 요약 데이터 (summary)
+    document.getElementById('statAvgPrice').innerText = data.stats.summary.avg_price_str;
+    document.getElementById('statMinMax').innerText = `${data.stats.summary.min_price_str} / ${data.stats.summary.max_price_str}`;
+    
+    // 플랫폼 비교 데이터 (comparison)
+    document.getElementById('statGap').innerText = data.stats.comparison.price_gap_str;
+    document.getElementById('statGapNote').innerText = data.stats.comparison.gap_note || "비교 데이터가 부족합니다.";
 
     // 2. 리스트 하단 업데이트
-    document.getElementById('itemCount').innerText = `전체 매물 ${data.total}건 (네이버 ${data.naver_count}, 직방 ${data.zigbang_count})`;
+    document.getElementById('itemCount').innerText = `전체 매물 ${data.total_count}건 (네이버 ${data.naver_count}, 직방 ${data.zigbang_count})`;
     const listBody = document.getElementById('propertyList');
     listBody.innerHTML = '';
 
