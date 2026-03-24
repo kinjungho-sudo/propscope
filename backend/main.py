@@ -19,9 +19,10 @@ app.include_router(search.router)
 app.include_router(report.router)
 
 
+@app.get("/")
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "timestamp": time.time()}
+    return {"status": "ok", "message": "PropScope API is running", "timestamp": time.time()}
 
 
 @app.get("/api/region-code")
