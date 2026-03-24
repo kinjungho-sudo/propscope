@@ -126,21 +126,21 @@ class MolitCrawler(BaseCrawler):
             page_no = 1
             while True:
                 try:
-                    # requests의 params 자동 인코딩 문제 방지를 위해 수동 URL 구성
-                    final_url = f"{url}?serviceKey={self.api_key}&LAWD_CD={gu_code}&DEAL_YMD={deal_ymd}&numOfRows=200&pageNo={page_no}&_type=json"
+                    import urllib.parse
+                    # API 키가 이미 인코딩되어 있을 경우를 대비해 디코딩 후 다시 구성 (이중 인코딩 방지)
+                    raw_key = urllib.parse.unquote(self.api_key)
+                    final_url = f"{url}?serviceKey={raw_key}&LAWD_CD={gu_code}&DEAL_YMD={deal_ymd}&numOfRows=200&pageNo={page_no}&_type=json"
                     
                     r = requests.get(final_url, timeout=12)
                     if r.status_code != 200:
-                        masked_url = final_url.replace(self.api_key, "REDACTED")
-                        print(f"[MolitCrawler] ERROR {r.status_code} for {deal_ymd} ({prop_type}) - URL: {masked_url}")
-                        print(f"[MolitCrawler] Response: {r.text[:200]}")
+                        masked_key = raw_key[:5] + "..." + raw_key[-5:]
+                        print(f"[MolitCrawler] ERROR {r.status_code} for {deal_ymd} ({prop_type}) - Key(Masked): {masked_key}")
                         break
                     
                     data = r.json()
                     body = data.get("response", {}).get("body", {})
                     items = parse_molit_items(body.get("items", {}))
                     if not items:
-                        # print(f"[MolitCrawler] No items for {deal_ymd} ({prop_type})")
                         break
                     
                     dong_filter = condition.region_name
