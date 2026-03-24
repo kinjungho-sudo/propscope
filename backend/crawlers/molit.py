@@ -98,7 +98,7 @@ class MolitCrawler(BaseCrawler):
             f"{self.BASE_URL}/getRTMSDataSvcRHTrade"
             f"?serviceKey={self.api_key}&LAWD_CD=11440&DEAL_YMD=202502&numOfRows=1&pageNo=1&_type=json"
         )
-        today = date.today()
+        # today = date.today()  # 전역 변수로 이미 정의됨
         results = []
         # 시군구 코드 (10자리 법정동코드의 앞 5자리)
         gu_code = condition.region_code[:5] if condition.region_code else "11440"
