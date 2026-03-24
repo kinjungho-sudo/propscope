@@ -17,6 +17,7 @@ from ..utils.price_parser import format_price
 
 CURRENT_YEAR = datetime.now().year
 NEW_BUILD_THRESHOLD = 5
+today = date.today()
 
 # ── 기존 정적 매핑 제거 (법정동코드 직접 활용) ──
 
