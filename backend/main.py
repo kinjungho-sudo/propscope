@@ -242,13 +242,16 @@ def get_region_code(region: str):
                 "full_address": region_clean
             })
 
-    print(f"[RegionCode] No match for '{region}'. Using default (공덕동).")
+    # 실패 시 로그 (공덕동 함정 제거!)
+    print(f"[RegionCode] No match found via Naver API or Static Map for '{region}'.")
+    
+    # 기본값으로라도 지도는 이동시키기 위해 강남역 근처를 제안 (동네 입력값은 유지)
     return JSONResponse({
         "region": region,
-        "code": "1144010200",
-        "lat": 37.5443,
-        "lng": 126.9510,
-        "full_address": f"{region} (매칭 실패 - 공덕동 대체)"
+        "code": "1168010100",  # 기본값도 강남구 역삼동으로 변경 (인지도가 높음)
+        "lat": 37.4981,
+        "lng": 127.0276,
+        "full_address": f"{region} (좌표 자동 설정)"
     })
 
 

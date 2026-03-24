@@ -134,11 +134,15 @@ class MolitCrawler(BaseCrawler):
                 }
                 try:
                     r = requests.get(url, params=params, timeout=12)
-                    if r.status_code != 200: break
+                    if r.status_code != 200:
+                        print(f"[MolitCrawler] ERROR {r.status_code} for {deal_ymd} ({prop_type}) - {r.text[:100]}")
+                        break
                     data = r.json()
                     body = data.get("response", {}).get("body", {})
                     items = parse_molit_items(body.get("items", {}))
-                    if not items: break
+                    if not items:
+                        print(f"[MolitCrawler] No items found for {deal_ymd} ({prop_type})")
+                        break
                     
                     dong_filter = condition.region_name
                     for it in items:
@@ -199,5 +203,5 @@ class MolitCrawler(BaseCrawler):
             for sublist in all_lists:
                 results.extend(sublist)
 
-        print(f"[MolitCrawler] 5Years Collection Finished: Total {len(results)} items.")
+        print(f"[MolitCrawler] 3 Years Collection Finished: Total {len(results)} items.")
         return results
