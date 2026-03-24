@@ -125,24 +125,22 @@ class MolitCrawler(BaseCrawler):
             m_results = []
             page_no = 1
             while True:
-                params = {
-                    "serviceKey": self.api_key,
-                    "LAWD_CD": gu_code,
-                    "DEAL_YMD": deal_ymd,
-                    "numOfRows": "200",
-                    "pageNo": str(page_no),
-                    "_type": "json"
-                }
                 try:
-                    r = requests.get(url, params=params, timeout=12)
+                    # requests의 params 자동 인코딩 문제 방지를 위해 수동 URL 구성
+                    final_url = f"{url}?serviceKey={self.api_key}&LAWD_CD={gu_code}&DEAL_YMD={deal_ymd}&numOfRows=200&pageNo={page_no}&_type=json"
+                    
+                    r = requests.get(final_url, timeout=12)
                     if r.status_code != 200:
-                        print(f"[MolitCrawler] ERROR {r.status_code} for {deal_ymd} ({prop_type}) - {r.text[:100]}")
+                        masked_url = final_url.replace(self.api_key, "REDACTED")
+                        print(f"[MolitCrawler] ERROR {r.status_code} for {deal_ymd} ({prop_type}) - URL: {masked_url}")
+                        print(f"[MolitCrawler] Response: {r.text[:200]}")
                         break
+                    
                     data = r.json()
                     body = data.get("response", {}).get("body", {})
                     items = parse_molit_items(body.get("items", {}))
                     if not items:
-                        print(f"[MolitCrawler] No items found for {deal_ymd} ({prop_type})")
+                        # print(f"[MolitCrawler] No items for {deal_ymd} ({prop_type})")
                         break
                     
                     dong_filter = condition.region_name
